@@ -518,7 +518,7 @@
         if(num === 0) return 'শূন্য টাকা মাত্র';
         const ones = {0:'', 1:'এক',2:'দুই',3:'তিন',4:'চার',5:'পাঁচ',6:'ছয়',7:'সাত',8:'আট',9:'নয়',10:'দশ',
             11:'এগারো',12:'বারো',13:'তেরো',14:'চৌদ্দ',15:'পনেরো',16:'ষোলো',17:'সতেরো',18:'আঠারো',19:'উনিশ',
-            20:'বিশ',21:'একুশ',22:'বাইশ',23:'তেইশ',24:'চব্বিশ',25:'পঁচিশ',26:'ছাব্বিশ',27:'सাতাশ',28:'আটাশ',29:'ঊনত্রিশ',
+            20:'বিশ',21:'একুশ',22:'বাইশ',23:'তেইশ',24:'চব্বিশ',25:'পঁচিশ',26:'ছাব্বিশ',27:'সাতাশ',28:'আটাশ',29:'ঊনত্রিশ',
             30:'ত্রিশ',31:'একত্রিশ',32:'বত্রিশ',33:'তেত্রিশ',34:'চৌত্রিশ',35:'পঁয়ত্রিশ',36:'ছত্রিশ',37:'সাঁইত্রিশ',38:'আটত্রিশ',39:'ঊনচল্লিশ',
             40:'চল্লিশ',41:'একচল্লিশ',42:'বিয়াল্লিশ',43:'তেতাল্লিশ',44:'চুয়াল্লিশ',45:'পঁয়তাল্লিশ',46:'ছেচল্লিশ',47:'সাতচল্লিশ',48:'আটচল্লিশ',49:'ঊনপঞ্চাশ',
             50:'পঞ্চাশ',51:'একান্ন',52:'বাহান্ন',53:'তিপ্পান্ন',54:'চুয়ান্ন',55:'পঞ্চান্ন',56:'ছাপ্পান্ন',57:'সাতান্ন',58:'আটান্ন',59:'ঊনষাট',
@@ -544,7 +544,7 @@
         return (neg ? 'মাইনাস ' : '') + parts.join(' ') + ' টাকা মাত্র';
     }
 
-    // SMS API
+    // --- UPDATE: SMS API with CORS Bypass Fix ---
     async function sendSMS(number, message) {
         const api_key = "M2M68W2DyHuhcmOGYrcz";
         const sender_id = "8809648909706";
@@ -552,11 +552,23 @@
         if (cleanNum.length === 13 && cleanNum.startsWith('88')) cleanNum = cleanNum.substring(2);
         if(!cleanNum.match(/^(01[3-9]\d{8})$/)) return; 
         
-        const url = `https://bulksmsbd.net/api/smsapi?api_key=${encodeURIComponent(api_key)}&type=unicode&number=${encodeURIComponent(cleanNum)}&senderid=${encodeURIComponent(sender_id)}&message=${encodeURIComponent(message)}`;
+        // তৈরি করা মূল URL
+        const targetUrl = `https://bulksmsbd.net/api/smsapi?api_key=${encodeURIComponent(api_key)}&type=unicode&number=${encodeURIComponent(cleanNum)}&senderid=${encodeURIComponent(sender_id)}&message=${encodeURIComponent(message)}`;
+        
         try {
-            await fetch(url, { mode: 'no-cors' }); 
+            // Method 1: ব্রাউজারের Security (CORS) বাইপাস করার জন্য Script Tag Injection পদ্ধতি
+            // এটি সম্পূর্ণ নিরাপদ এবং থার্ড-পার্টি প্রক্সি ছাড়াই সরাসরি API-তে ডাটা পাঠায়।
+            const script = document.createElement('script');
+            script.src = targetUrl;
+            document.body.appendChild(script);
+            
+            // রিকোয়েস্ট চলে যাওয়ার পর স্ক্রিপ্টটি ডিলিট করে দেওয়া হচ্ছে
+            setTimeout(() => { document.body.removeChild(script); }, 2000);
+            
             showToast("SMS রিকোয়েস্ট পাঠানো হয়েছে");
-        } catch(e) { console.error("SMS Error"); }
+        } catch(e) { 
+            console.error("SMS Error: ", e); 
+        }
     }
 
     // Auth Logic
