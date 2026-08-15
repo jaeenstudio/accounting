@@ -548,8 +548,21 @@
     const secondaryAuth = getAuth(secondaryApp);
 
     // UI Helpers
-    const showLoader = () => document.getElementById('loader').classList.remove('hidden-view');
-    const hideLoader = () => document.getElementById('loader').classList.add('hidden-view');
+    // সেফটি-নেট: কোনো কারণে (নেট সমস্যা, অপ্রত্যাশিত এরর ইত্যাদি) hideLoader() কল না হলেও
+    // লোডিং স্ক্রিন যেন চিরকাল আটকে না থাকে — ১৫ সেকেন্ড পর নিজে থেকেই বন্ধ হয়ে যাবে।
+    let loaderSafetyTimer = null;
+    const showLoader = () => {
+        document.getElementById('loader').classList.remove('hidden-view');
+        clearTimeout(loaderSafetyTimer);
+        loaderSafetyTimer = setTimeout(() => {
+            document.getElementById('loader').classList.add('hidden-view');
+            showToast('লোড হতে বেশি সময় লাগছে — ইন্টারনেট সংযোগ চেক করে আবার চেষ্টা করুন', true);
+        }, 15000);
+    };
+    const hideLoader = () => {
+        clearTimeout(loaderSafetyTimer);
+        document.getElementById('loader').classList.add('hidden-view');
+    };
     const showToast = (msg, isErr = false) => {
         const t = document.getElementById('toast');
         t.innerText = msg;
@@ -798,7 +811,7 @@
         `;
         if (window.lucide) window.lucide.createIcons();
         
-        recent.sort((a,b) => b.timestamp - a.timestamp);
+        recent.sort((a,b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0));
         const tbody = document.getElementById('dashboard-recent-tx');
         tbody.innerHTML = '';
         recent.slice(0,10).forEach(r => {
@@ -889,45 +902,66 @@
     // --- PROFILE ---
     async function loadProfile(id) {
         showLoader();
-        const cSnap = await getDoc(doc(db, "customers", id));
-        const c = cSnap.data();
-        document.getElementById('profName').innerText = c.name;
-        document.getElementById('profMobile').innerText = c.mobile;
-        document.getElementById('profTotBill').innerText = c.total_billed || 0;
-        document.getElementById('profTotPaid').innerText = c.total_paid || 0;
-        document.getElementById('profTotDue').innerText = c.total_due || 0;
-        
-        document.getElementById('payDueCustId').value = id;
-        document.getElementById('payDueDate').value = getTodayStr();
-        
-        const dueBox = document.getElementById('profDueBox');
-        if(c.total_due > 0) {
-            dueBox.classList.remove('hidden-view');
-            document.getElementById('profDueAmt').innerText = c.total_due;
-            document.getElementById('payDueAmt').max = c.total_due;
-        } else { dueBox.classList.add('hidden-view'); }
+        try {
+            if(!id) { showToast('গ্রাহক আইডি পাওয়া যায়নি', true); navigate('customers'); return; }
 
-        const txs = await getDocs(query(collection(db, "transactions"), where("customerId", "==", id), orderBy("timestamp", "desc")));
-        const tbody = document.getElementById('profHistory');
-        tbody.innerHTML = '';
-        
-        txs.forEach(docSnap => {
-            const h = docSnap.data();
-            const b = (h.total_amount || 0) - (h.discount || 0);
-            const tr = document.createElement('tr');
-            tr.className = 'border-b hover:bg-white/40';
-            tr.innerHTML = `
-                <td class="p-3 border">${formatBNDate(h.date)}</td>
-                <td class="p-3 border font-bold ${h.category==='বকেয়া পরিশোধ'?'text-green-600':'text-gray-700'}">${h.category==='বকেয়া পরিশোধ' ? 'বকেয়া পরিশোধ' : 'সেবা/কাজ'}</td>
-                <td class="p-3 border text-right">৳ ${b}</td>
-                <td class="p-3 border text-right text-green-600 font-bold">৳ ${h.paid_amount || 0}</td>
-                <td class="p-3 border text-right text-red-500 font-bold">৳ ${h.due_amount > 0 ? h.due_amount : 0}</td>
-                <td class="p-3 border text-center"><button type="button" class="text-blue-600 font-bold hover:underline prof-inv-btn">রশিদ</button></td>`;
-            tr.querySelector('.prof-inv-btn').addEventListener('click', () => navigate('invoice', { id: docSnap.id }));
-            tbody.appendChild(tr);
-        });
-        if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500 border">কোনো লেনদেন নেই</td></tr>';
-        hideLoader();
+            const cSnap = await getDoc(doc(db, "customers", id));
+            if(!cSnap.exists()) { showToast('এই গ্রাহকটি খুঁজে পাওয়া যায়নি', true); navigate('customers'); return; }
+            const c = cSnap.data();
+            document.getElementById('profName').innerText = c.name || '';
+            document.getElementById('profMobile').innerText = c.mobile || '';
+            document.getElementById('profTotBill').innerText = c.total_billed || 0;
+            document.getElementById('profTotPaid').innerText = c.total_paid || 0;
+            document.getElementById('profTotDue').innerText = c.total_due || 0;
+
+            document.getElementById('payDueCustId').value = id;
+            document.getElementById('payDueDate').value = getTodayStr();
+
+            const dueBox = document.getElementById('profDueBox');
+            if(c.total_due > 0) {
+                dueBox.classList.remove('hidden-view');
+                document.getElementById('profDueAmt').innerText = c.total_due;
+                document.getElementById('payDueAmt').max = c.total_due;
+            } else { dueBox.classList.add('hidden-view'); }
+
+            const tbody = document.getElementById('profHistory');
+            tbody.innerHTML = '';
+            try {
+                // customerId (equality) + timestamp (orderBy) হলো Firestore-এ কম্পোজিট ইনডেক্স
+                // লাগে এমন একটা কম্বিনেশন — সেই ইনডেক্স তৈরি না থাকলে এই কোয়েরি এতদিন
+                // এরর থ্রো করত এবং পুরো প্রোফাইল পেজ চিরকাল লোডিং-এ আটকে থাকত। orderBy বাদ
+                // দিয়ে ব্রাউজারেই সর্ট করাই এখন থেকে নির্ভরযোগ্য সমাধান।
+                const txs = await getDocs(query(collection(db, "transactions"), where("customerId", "==", id)));
+                const rows = [];
+                txs.forEach(docSnap => rows.push({ id: docSnap.id, ...docSnap.data() }));
+                rows.sort((a, b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0));
+
+                rows.forEach(h => {
+                    const b = (h.total_amount || 0) - (h.discount || 0);
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b hover:bg-white/40';
+                    tr.innerHTML = `
+                        <td class="p-3 border">${formatBNDate(h.date)}</td>
+                        <td class="p-3 border font-bold ${h.category==='বকেয়া পরিশোধ'?'text-green-600':'text-gray-700'}">${h.category==='বকেয়া পরিশোধ' ? 'বকেয়া পরিশোধ' : 'সেবা/কাজ'}</td>
+                        <td class="p-3 border text-right">৳ ${b}</td>
+                        <td class="p-3 border text-right text-green-600 font-bold">৳ ${h.paid_amount || 0}</td>
+                        <td class="p-3 border text-right text-red-500 font-bold">৳ ${h.due_amount > 0 ? h.due_amount : 0}</td>
+                        <td class="p-3 border text-center"><button type="button" class="text-blue-600 font-bold hover:underline prof-inv-btn">রশিদ</button></td>`;
+                    tr.querySelector('.prof-inv-btn').addEventListener('click', () => navigate('invoice', { id: h.id }));
+                    tbody.appendChild(tr);
+                });
+                if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500 border">কোনো লেনদেন নেই</td></tr>';
+            } catch(histErr) {
+                console.error('প্রোফাইল হিস্ট্রি লোড এরর:', histErr);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500 border">কাজের হিস্ট্রি লোড করা যায়নি</td></tr>';
+                showToast('কাজের হিস্ট্রি লোড করতে সমস্যা হয়েছে', true);
+            }
+        } catch(err) {
+            console.error('প্রোফাইল লোড এরর:', err);
+            showToast('প্রোফাইল লোড করতে সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
+        } finally {
+            hideLoader();
+        }
     }
 
     window.navToNewBillFromProfile = () => {
@@ -1183,75 +1217,102 @@
         if(printBtn) printBtn.disabled = true; // avoid printing before data is ready
         const num = (v) => (typeof v === 'number' && !isNaN(v)) ? v : (parseFloat(v) || 0);
 
-        const txDocSnap = await getDoc(doc(db, "transactions", txId));
-        if(!txDocSnap.exists()) { showToast('রশিদ পাওয়া যায়নি', true); hideLoader(); return; }
-        const tx = txDocSnap.data();
-        tx.total_amount = num(tx.total_amount);
-        tx.discount = num(tx.discount);
-        tx.paid_amount = num(tx.paid_amount);
-        tx.due_amount = num(tx.due_amount);
+        try {
+            if(!txId) { showToast('রশিদ আইডি পাওয়া যায়নি', true); return; }
 
-        document.getElementById('invName').innerText = tx.customerName || '';
-        document.getElementById('invMobile').innerText = tx.customerMobile || '';
-        document.getElementById('invId').innerText = "#JS-" + txId.substring(0,5).toUpperCase();
-        document.getElementById('invDate').innerText = formatBNDate(tx.date);
-        
-        const iBody = document.getElementById('invItemsBody');
-        iBody.innerHTML = '';
-        
-        if(tx.category === 'বকেয়া পরিশোধ') {
-            document.getElementById('invItemsArea').classList.add('hidden-view');
-        } else {
-            document.getElementById('invItemsArea').classList.remove('hidden-view');
-            const itemsSnap = await getDocs(collection(db, `transactions/${txId}/items`));
-            itemsSnap.forEach(itemDoc => {
-                const it = itemDoc.data();
-                iBody.innerHTML += `<tr><td class="p-2 border border-gray-300">${it.service_name||''}</td><td class="p-2 border border-gray-300">${it.customer_worker_name||''}</td><td class="p-2 border border-gray-300 text-center">${num(it.qty)}</td><td class="p-2 border border-gray-300 text-right">${num(it.rate)}</td><td class="p-2 border border-gray-300 text-right font-bold text-gray-800">৳ ${num(it.amount)}</td></tr>`;
-            });
+            const txDocSnap = await getDoc(doc(db, "transactions", txId));
+            if(!txDocSnap.exists()) { showToast('রশিদ পাওয়া যায়নি', true); return; }
+            const tx = txDocSnap.data();
+            tx.total_amount = num(tx.total_amount);
+            tx.discount = num(tx.discount);
+            tx.paid_amount = num(tx.paid_amount);
+            tx.due_amount = num(tx.due_amount);
+
+            document.getElementById('invName').innerText = tx.customerName || '';
+            document.getElementById('invMobile').innerText = tx.customerMobile || '';
+            document.getElementById('invId').innerText = "#JS-" + txId.substring(0,5).toUpperCase();
+            document.getElementById('invDate').innerText = formatBNDate(tx.date);
+
+            const iBody = document.getElementById('invItemsBody');
+            iBody.innerHTML = '';
+
+            if(tx.category === 'বকেয়া পরিশোধ') {
+                document.getElementById('invItemsArea').classList.add('hidden-view');
+            } else {
+                document.getElementById('invItemsArea').classList.remove('hidden-view');
+                try {
+                    const itemsSnap = await getDocs(collection(db, `transactions/${txId}/items`));
+                    itemsSnap.forEach(itemDoc => {
+                        const it = itemDoc.data();
+                        iBody.innerHTML += `<tr><td class="p-2 border border-gray-300">${it.service_name||''}</td><td class="p-2 border border-gray-300">${it.customer_worker_name||''}</td><td class="p-2 border border-gray-300 text-center">${num(it.qty)}</td><td class="p-2 border border-gray-300 text-right">${num(it.rate)}</td><td class="p-2 border border-gray-300 text-right font-bold text-gray-800">৳ ${num(it.amount)}</td></tr>`;
+                    });
+                } catch(itemsErr) {
+                    console.error('ইনভয়েস আইটেম লোড এরর:', itemsErr);
+                    iBody.innerHTML = '<tr><td colspan="5" class="p-2 border border-gray-300 text-center text-red-500">সেবার তালিকা লোড করা যায়নি</td></tr>';
+                }
+            }
+
+            // Due calculation logic for invoice
+            const c_id = tx.customerId;
+            let rem_due = tx.due_amount; // নিরাপদ ফলব্যাক — নিচের হিস্ট্রি-কোয়েরি ব্যর্থ হলেও এই মানটা থাকবে
+            if(c_id) {
+                try {
+                    // customerId (equality) + timestamp (orderBy) একসাথে থাকলে Firestore
+                    // কম্পোজিট ইনডেক্স চায়; সেটা না থাকলে আগে পুরো ফাংশনটাই এরর দিয়ে থেমে
+                    // যেত (ফলে মোট বিল/জমা/বকেয়া কিছুই দেখাত না, প্রিন্ট বাটনও চালু হতো না)।
+                    // orderBy বাদ দিয়ে জাভাস্ক্রিপ্টে সর্ট করাই এখন থেকে নির্ভরযোগ্য সমাধান।
+                    const allTxs = await getDocs(query(collection(db, "transactions"), where("customerId", "==", c_id)));
+                    const rows = [];
+                    allTxs.forEach(d => rows.push({ id: d.id, ...d.data() }));
+                    rows.sort((a, b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0));
+
+                    let sum = 0, isPastTx = true;
+                    rows.forEach(d => {
+                        if(isPastTx) sum += num(d.due_amount);
+                        if(d.id === txId) isPastTx = false; // Stop adding after current tx
+                    });
+                    rem_due = sum;
+                } catch(dueErr) {
+                    console.error('বকেয়া হিসাব এরর:', dueErr);
+                    showToast('সর্বমোট বকেয়া হিসাব করতে সমস্যা হয়েছে, শুধু এই বিলের বকেয়া দেখানো হচ্ছে', true);
+                    rem_due = tx.due_amount;
+                }
+            }
+
+            const sBox = document.getElementById('invSummaryBox');
+            if(tx.category === 'বকেয়া পরিশোধ') {
+                const prevDue = rem_due + tx.paid_amount;
+                sBox.innerHTML = `
+                    <div class="flex justify-between font-bold text-gray-600 pb-2"><span>পূর্বের বকেয়া:</span><span>৳ ${prevDue}</span></div>
+                    <div class="flex justify-between font-bold text-green-700 border-b-2 border-gray-300 pb-2 mt-2"><span>আজকের জমা:</span><span class="text-xl">৳ ${tx.paid_amount}</span></div>
+                    ${rem_due > 0 ? `<div class="flex justify-between font-bold text-red-600 text-lg pt-2 mt-2 border-t"><span>অবশিষ্ট বকেয়া:</span><span>৳ ${rem_due}</span></div>` : `<div class="text-center font-bold text-green-600 text-lg pt-4 mt-2 border-t">আপনার সম্পূর্ণ বকেয়া পরিশোধিত</div>`}
+                `;
+            } else {
+                sBox.innerHTML = `
+                    <div class="flex justify-between font-bold text-gray-700"><span>সর্বমোট বিল:</span><span>৳ ${tx.total_amount}</span></div>
+                    ${tx.discount > 0 ? `<div class="flex justify-between font-bold text-gray-500"><span>ডিসকাউন্ট:</span><span>- ৳ ${tx.discount}</span></div><div class="flex justify-between font-bold text-[#047857] text-xl"><span>ফাইনাল বিল:</span><span>৳ ${tx.total_amount - tx.discount}</span></div>` : ''}
+                    <div class="flex justify-between font-bold text-green-700 border-b-2 border-gray-300 pb-2 mt-2"><span>জমা:</span><span class="text-xl">৳ ${tx.paid_amount}</span></div>
+                    <div class="flex justify-between font-bold text-xl pt-2">
+                        ${tx.due_amount < 0 ? `<span class="text-purple-600">অ্যাডভান্স জমা:</span><span class="text-purple-600">৳ ${Math.abs(tx.due_amount)}</span>` : `<span class="text-red-600">বর্তমান বিলের বকেয়া:</span><span class="text-red-600">৳ ${tx.due_amount}</span>`}
+                    </div>
+                    ${rem_due > 0 && rem_due !== tx.due_amount ? `<div class="flex justify-between font-bold text-red-600 text-lg pt-2 mt-2 border-t"><span>সর্বমোট অবশিষ্ট বকেয়া:</span><span>৳ ${rem_due}</span></div>` : ''}
+                `;
+            }
+
+            const wBox = document.getElementById('invWords');
+            if(rem_due > 0) wBox.innerText = `সর্বমোট বকেয়া (কথায়): ${bnNumberToWords(rem_due)}`;
+            else if (rem_due < 0) wBox.innerText = `অ্যাডভান্স জমা (কথায়): ${bnNumberToWords(Math.abs(rem_due))}`;
+            else wBox.innerText = `কোনো বকেয়া নেই — হিসাব সম্পূর্ণ পরিশোধিত`;
+
+            if(printBtn) printBtn.disabled = false; // data fully রেন্ডার হয়েছে — এখন প্রিন্ট করা নিরাপদ
+        } catch(err) {
+            console.error('ইনভয়েস লোড এরর:', err);
+            showToast('রশিদ লোড করতে সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
+        } finally {
+            hideLoader();
         }
-        
-        // Due calculation logic for invoice
-        const c_id = tx.customerId;
-        let rem_due = 0;
-        if(c_id) {
-            const allTxs = await getDocs(query(collection(db, "transactions"), where("customerId", "==", c_id), orderBy("timestamp", "asc")));
-            let isPastTx = true;
-            allTxs.forEach(d => {
-                if(isPastTx) rem_due += num(d.data().due_amount);
-                if(d.id === txId) isPastTx = false; // Stop adding after current tx
-            });
-        } else {
-            rem_due = tx.due_amount;
-        }
-        
-        const sBox = document.getElementById('invSummaryBox');
-        if(tx.category === 'বকেয়া পরিশোধ') {
-            const prevDue = rem_due + tx.paid_amount;
-            sBox.innerHTML = `
-                <div class="flex justify-between font-bold text-gray-600 pb-2"><span>পূর্বের বকেয়া:</span><span>৳ ${prevDue}</span></div>
-                <div class="flex justify-between font-bold text-green-700 border-b-2 border-gray-300 pb-2 mt-2"><span>আজকের জমা:</span><span class="text-xl">৳ ${tx.paid_amount}</span></div>
-                ${rem_due > 0 ? `<div class="flex justify-between font-bold text-red-600 text-lg pt-2 mt-2 border-t"><span>অবশিষ্ট বকেয়া:</span><span>৳ ${rem_due}</span></div>` : `<div class="text-center font-bold text-green-600 text-lg pt-4 mt-2 border-t">আপনার সম্পূর্ণ বকেয়া পরিশোধিত</div>`}
-            `;
-        } else {
-            sBox.innerHTML = `
-                <div class="flex justify-between font-bold text-gray-700"><span>সর্বমোট বিল:</span><span>৳ ${tx.total_amount}</span></div>
-                ${tx.discount > 0 ? `<div class="flex justify-between font-bold text-gray-500"><span>ডিসকাউন্ট:</span><span>- ৳ ${tx.discount}</span></div><div class="flex justify-between font-bold text-[#047857] text-xl"><span>ফাইনাল বিল:</span><span>৳ ${tx.total_amount - tx.discount}</span></div>` : ''}
-                <div class="flex justify-between font-bold text-green-700 border-b-2 border-gray-300 pb-2 mt-2"><span>জমা:</span><span class="text-xl">৳ ${tx.paid_amount}</span></div>
-                <div class="flex justify-between font-bold text-xl pt-2">
-                    ${tx.due_amount < 0 ? `<span class="text-purple-600">অ্যাডভান্স জমা:</span><span class="text-purple-600">৳ ${Math.abs(tx.due_amount)}</span>` : `<span class="text-red-600">বর্তমান বিলের বকেয়া:</span><span class="text-red-600">৳ ${tx.due_amount}</span>`}
-                </div>
-                ${rem_due > 0 && rem_due !== tx.due_amount ? `<div class="flex justify-between font-bold text-red-600 text-lg pt-2 mt-2 border-t"><span>সর্বমোট অবশিষ্ট বকেয়া:</span><span>৳ ${rem_due}</span></div>` : ''}
-            `;
-        }
-        
-        const wBox = document.getElementById('invWords');
-        if(rem_due > 0) wBox.innerText = `সর্বমোট বকেয়া (কথায়): ${bnNumberToWords(rem_due)}`;
-        else if (rem_due < 0) wBox.innerText = `অ্যাডভান্স জমা (কথায়): ${bnNumberToWords(Math.abs(rem_due))}`;
-        else wBox.innerText = `কোনো বকেয়া নেই — হিসাব সম্পূর্ণ পরিশোধিত`;
-        
-        if(printBtn) printBtn.disabled = false; // data fully rendered — now safe to print
-        hideLoader();
     }
+
 
     // --- RESET DATA ---
     window.resetDatabase = async (e) => {
