@@ -37,24 +37,72 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
-        :root { --brand: #047857; --brand-dark: #065F46; --accent: #4F46E5; --gold: #F59E0B; --navy: #0F172A; }
+        :root {
+            --brand: #059669; --brand-dark: #065F46; --accent: #4F46E5; --gold: #F59E0B; --navy: #0F172A;
+            --glass-bg: rgba(255,255,255,0.60);
+            --glass-bg-strong: rgba(255,255,255,0.78);
+            --glass-border: rgba(255,255,255,0.55);
+        }
         html { scroll-behavior: smooth; }
-        body { font-family: 'Poppins', 'SolaimanLipi', sans-serif; background: #F1F5F9; }
+        body {
+            font-family: 'Poppins', 'SolaimanLipi', sans-serif;
+            color: #1E293B;
+            background-color: #EEF2F6;
+            background-image:
+                radial-gradient(circle at 8% 15%, rgba(5,150,105,0.16) 0%, rgba(5,150,105,0) 45%),
+                radial-gradient(circle at 92% 12%, rgba(79,70,229,0.14) 0%, rgba(79,70,229,0) 42%),
+                radial-gradient(circle at 50% 100%, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0) 40%);
+            background-attachment: fixed;
+        }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
         .hidden-view { display: none !important; }
-        .active-nav { background: rgba(255,255,255,0.15) !important; border-left: 4px solid var(--gold) !important; font-weight: bold; }
-        
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .active-nav { background: rgba(255,255,255,0.16) !important; border-left: 4px solid var(--gold) !important; font-weight: bold; backdrop-filter: blur(6px); }
+
+        /* --- Glassmorphism system (applied across dashboard / cards / tables) --- */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 30px -8px rgba(15,23,42,0.12), 0 2px 8px -2px rgba(15,23,42,0.06);
+        }
+        .glass-strong {
+            background: var(--glass-bg-strong);
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 30px -8px rgba(15,23,42,0.12), 0 2px 8px -2px rgba(15,23,42,0.06);
+        }
+        .glass-soft {
+            background: rgba(255,255,255,0.45);
+            backdrop-filter: blur(14px) saturate(150%);
+            -webkit-backdrop-filter: blur(14px) saturate(150%);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .glass-dark {
+            background: rgba(15,23,42,0.35);
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat-icon-badge {
+            width: 44px; height: 44px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px -2px rgba(15,23,42,0.15);
+        }
+
+        #loader { position: fixed; inset: 0; background: rgba(241,245,249,0.85); backdrop-filter: blur(6px); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: var(--brand); animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
+
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0;}
             .no-print { display: none !important; }
             .print-break-avoid { page-break-inside: avoid; }
+            body { background: #fff !important; }
         }
     </style>
 </head>
@@ -67,7 +115,7 @@
 <!-- LOGIN VIEW -->
 <div id="view-login" class="web-container flex-1 flex flex-col md:flex-row max-w-[1450px] mx-auto w-full md:my-6 md:gap-5 bg-transparent hidden-view">
     <div class="min-h-[90vh] flex items-center justify-center p-4 w-full relative">
-        <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 relative z-10">
+        <div class="glass-strong p-8 md:p-10 rounded-2xl shadow-xl w-full max-w-md relative z-10">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-white shadow-lg" style="background:linear-gradient(135deg,#0F172A,#047857);">
                     <i data-lucide="landmark" class="w-8 h-8"></i>
@@ -153,15 +201,27 @@
             <div id="page-dashboard" class="app-page hidden-view">
                 <div class="relative overflow-hidden rounded-2xl shadow-md mb-6 p-6 md:p-10 text-center" style="background:linear-gradient(135deg,#0F172A 0%,#1E293B 55%,#065F46 130%);">
                     <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-3" style="font-family: 'Anek Bangla', sans-serif;">জাঈন স্টুডিও</h1>
+                    <p class="text-sm md:text-lg font-bold text-white/90 bg-white/10 inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-2"><i data-lucide="user-round" class="w-4 h-4 text-[#F59E0B]"></i> প্রোঃ শেখ জাকিরুল ইসলাম জুয়েল &nbsp;|&nbsp; মোবাইলঃ 01733-296262</p>
                     <p class="text-base md:text-xl font-bold text-white/85 bg-white/10 inline-flex items-center gap-2 px-4 py-2 rounded-full">ঠিকানাঃ চরগোলাবাড়ী, মাদারগঞ্জ, জামালপুর</p>
                 </div>
+
+                <!-- Quick Customer Search -->
+                <div class="glass p-4 rounded-2xl mb-6 relative">
+                    <label class="font-bold text-gray-700 flex items-center gap-2 mb-2"><i data-lucide="search" class="w-4 h-4 text-[#047857]"></i> কাস্টমার সার্চ (নাম অথবা মোবাইল নং দিয়ে)</label>
+                    <div class="relative">
+                        <i data-lucide="user-search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="dashCustomerSearch" placeholder="নাম বা মোবাইল নাম্বার লিখুন..." class="w-full pl-10 pr-4 py-3 border rounded-xl bg-white/70 focus:outline-none focus:border-[#4F46E5]" oninput="dashboardSearchCustomers(this.value)" autocomplete="off">
+                    </div>
+                    <div id="dashSearchResults" class="absolute left-4 right-4 mt-1 bg-white rounded-xl shadow-xl border z-20 hidden-view max-h-72 overflow-y-auto"></div>
+                </div>
+
                 <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6" id="dashboard-stats">
                     <!-- Stats via JS -->
                 </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border overflow-x-auto">
+                <div class="glass p-4 rounded-2xl overflow-x-auto">
                     <h3 class="font-bold text-lg mb-3 flex items-center gap-2"><i data-lucide="list-checks" class="w-5 h-5 text-[#047857]"></i> আজকের সাম্প্রতিক লেনদেন</h3>
                     <table class="w-full text-sm text-left border-collapse min-w-[600px]">
-                        <thead><tr class="border-b bg-gray-50"><th class="p-3">খাত/গ্রাহক</th><th class="p-3">ধরণ</th><th class="p-3 text-right">মোট</th><th class="p-3 text-right">জমা</th><th class="p-3 text-right">বকেয়া</th></tr></thead>
+                        <thead><tr class="border-b border-gray-300/70 bg-white/40"><th class="p-3">খাত/গ্রাহক</th><th class="p-3">ধরণ</th><th class="p-3 text-right">মোট</th><th class="p-3 text-right">জমা</th><th class="p-3 text-right">বকেয়া</th></tr></thead>
                         <tbody id="dashboard-recent-tx"></tbody>
                     </table>
                 </div>
@@ -170,7 +230,7 @@
             <!-- Staff/Users Management -->
             <div id="page-users_manage" class="app-page hidden-view no-print">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border md:col-span-1 h-fit">
+                    <div class="glass p-6 rounded-2xl md:col-span-1 h-fit">
                         <h3 class="font-bold text-xl text-[#047857] mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="w-5 h-5"></i> নতুন স্টাফ তৈরি</h3>
                         <form id="staffForm" class="space-y-4">
                             <div>
@@ -188,11 +248,11 @@
                         </form>
                     </div>
                     
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border md:col-span-2">
+                    <div class="glass p-6 rounded-2xl md:col-span-2">
                         <h3 class="font-bold text-xl mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-gray-500"></i> বর্তমান স্টাফ তালিকা</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse min-w-[400px]">
-                                <thead><tr class="bg-gray-100 border-b"><th class="p-3">ইউজারনেম</th><th class="p-3">তৈরির তারিখ</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
+                                <thead><tr class="bg-white/40 border-b border-gray-300/70"><th class="p-3">ইউজারনেম</th><th class="p-3">তৈরির তারিখ</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
                                 <tbody id="staff-list"></tbody>
                             </table>
                         </div>
@@ -202,7 +262,7 @@
 
             <!-- Customers -->
             <div id="page-customers" class="app-page hidden-view">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border overflow-x-auto">
+                <div class="glass p-4 rounded-2xl overflow-x-auto">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-bold text-xl">কাস্টমার তালিকা</h3>
                         <div class="relative">
@@ -211,7 +271,7 @@
                         </div>
                     </div>
                     <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead><tr class="bg-gray-100 border-b border-t"><th class="p-3">নাম</th><th class="p-3">মোবাইল</th><th class="p-3 text-right">মোট বিল</th><th class="p-3 text-right">বকেয়া</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
+                        <thead><tr class="bg-white/40 border-b border-t border-gray-300/70"><th class="p-3">নাম</th><th class="p-3">মোবাইল</th><th class="p-3 text-right">মোট বিল</th><th class="p-3 text-right">বকেয়া</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
                         <tbody id="customers-list"></tbody>
                     </table>
                 </div>
@@ -219,7 +279,7 @@
 
             <!-- New/Edit Bill -->
             <div id="page-new_bill" class="app-page hidden-view">
-                <div class="bg-white p-4 md:p-8 rounded-2xl shadow-sm border">
+                <div class="glass p-4 md:p-8 rounded-2xl">
                     <h3 class="font-bold text-xl md:text-2xl text-[#047857] mb-6 border-b pb-3" id="bill-page-title">নতুন কাজ / বিল এন্ট্রি</h3>
                     <form id="billForm" onsubmit="saveBill(event)">
                         <input type="hidden" id="editTxId" value="">
@@ -280,7 +340,7 @@
 
             <!-- Customer Profile -->
             <div id="page-profile" class="app-page hidden-view">
-                <div class="bg-white p-6 rounded-2xl border shadow-sm mb-4">
+                <div class="glass p-6 rounded-2xl mb-4">
                     <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 border-b pb-4 gap-4">
                         <div>
                             <h3 class="text-2xl md:text-3xl font-bold text-[#047857]" id="profName">নাম</h3>
@@ -306,10 +366,10 @@
                     </div>
                 </div>
                 
-                <div class="bg-white p-4 md:p-6 rounded-2xl border shadow-sm overflow-x-auto">
+                <div class="glass p-4 md:p-6 rounded-2xl overflow-x-auto">
                     <h4 class="font-bold text-xl mb-4 text-gray-800">কাজের হিস্ট্রি</h4>
                     <table class="w-full text-left border-collapse border min-w-[700px]">
-                        <thead><tr class="bg-gray-100 border-b"><th class="p-3 border">তারিখ</th><th class="p-3 border">বিবরণ</th><th class="p-3 border text-right">মোট বিল</th><th class="p-3 border text-right">জমা</th><th class="p-3 border text-right">বকেয়া</th><th class="p-3 border text-center">অ্যাকশন</th></tr></thead>
+                        <thead><tr class="bg-white/40 border-b border-gray-300/70"><th class="p-3 border">তারিখ</th><th class="p-3 border">বিবরণ</th><th class="p-3 border text-right">মোট বিল</th><th class="p-3 border text-right">জমা</th><th class="p-3 border text-right">বকেয়া</th><th class="p-3 border text-center">অ্যাকশন</th></tr></thead>
                         <tbody id="profHistory"></tbody>
                     </table>
                 </div>
@@ -319,7 +379,7 @@
             <div id="page-invoice" class="app-page hidden-view">
                 <div class="mb-4 flex flex-wrap gap-2 justify-center md:justify-start no-print">
                     <button onclick="navigate('new_bill')" class="px-6 py-2.5 bg-gray-500 text-white font-bold rounded-xl shadow">নতুন বিল</button>
-                    <button onclick="window.print()" class="px-6 py-2.5 bg-[#4F46E5] text-white font-bold rounded-xl shadow flex items-center gap-2">
+                    <button id="printInvoiceBtn" onclick="window.print()" class="px-6 py-2.5 bg-[#4F46E5] text-white font-bold rounded-xl shadow flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <i data-lucide="printer" class="w-4 h-4"></i> প্রিন্ট করুন
                     </button>
                 </div>
@@ -328,7 +388,7 @@
                     <div class="text-center border-b-2 border-gray-300 pb-3 mb-6">
                         <h1 class="text-4xl md:text-5xl font-extrabold text-[#047857]" style="font-family: 'Anek Bangla', sans-serif;">জাঈন স্টুডিও</h1>
                         <p class="text-lg mt-2 font-bold bg-gray-50 inline-block px-4 py-1 rounded-full border border-gray-200">চরগোলাবাড়ী, মাদারগঞ্জ, জামালপুর</p>
-                        <p class="font-bold mt-2 text-gray-700">মোবাইলঃ 01733-296262 | প্রোঃ শেখ জাকিরুল ইসলাম</p>
+                        <p class="font-bold mt-2 text-gray-700">প্রোঃ শেখ জাকিরুল ইসলাম জুয়েল | মোবাইলঃ 01733-296262</p>
                     </div>
                     
                     <div class="flex flex-row justify-between mb-6 text-gray-800 text-[15px]">
@@ -346,8 +406,8 @@
                         <table class="w-full text-left border-collapse border border-gray-300 mb-6 text-[15px]">
                             <thead>
                                 <tr class="bg-gray-100 text-gray-800">
-                                    <th class="p-2 border border-gray-300">সেবার বিবরণ</th>
-                                    <th class="p-2 border border-gray-300">কর্মী</th>
+                                    <th class="p-2 border border-gray-300">সেবার নাম</th>
+                                    <th class="p-2 border border-gray-300">বিস্তারিত</th>
                                     <th class="p-2 border border-gray-300 text-center w-20">পরিমাণ</th>
                                     <th class="p-2 border border-gray-300 text-right w-24">রেট</th>
                                     <th class="p-2 border border-gray-300 text-right w-32">মোট</th>
@@ -369,17 +429,14 @@
 
                     <div class="mt-16 flex justify-between font-bold text-gray-800">
                         <div class="w-48 text-center border-t-2 border-gray-400 pt-2 mt-auto">গ্রাহকের স্বাক্ষর</div>
-                        <div class="w-48 text-center">
-                            <img src="https://ajkermadarganj.com/wp-content/uploads/2026/07/Signetur.png" alt="Signature" class="h-10 mx-auto" style="margin-bottom: -5px;">
-                            <div class="border-t-2 border-gray-400 pt-2">কর্তৃপক্ষের স্বাক্ষর</div>
-                        </div>
+                        <div class="w-48 text-center border-t-2 border-gray-400 pt-2 mt-auto">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
                 </div>
             </div>
 
             <!-- Expenses -->
             <div id="page-expenses" class="app-page hidden-view">
-                <div class="max-w-xl mx-auto bg-white p-8 rounded-2xl border shadow-sm">
+                <div class="max-w-xl mx-auto glass p-8 rounded-2xl">
                     <h3 class="font-bold text-red-600 border-b pb-3 mb-6 text-xl">দৈনিক খরচ এন্ট্রি</h3>
                     <form onsubmit="saveExpense(event)" class="space-y-6">
                         <div>
@@ -412,10 +469,10 @@
 
             <!-- Due List -->
             <div id="page-due_list" class="app-page hidden-view">
-                <div class="bg-white p-4 md:p-6 rounded-2xl border shadow-sm overflow-x-auto">
-                    <h3 class="font-bold text-red-600 border-b pb-2 mb-4 text-xl">বকেয়া পাওনাদার তালিকা</h3>
+                <div class="glass p-4 md:p-6 rounded-2xl overflow-x-auto">
+                    <h3 class="font-bold text-red-600 border-b border-gray-300/70 pb-2 mb-4 text-xl">বকেয়া পাওনাদার তালিকা</h3>
                     <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead><tr class="bg-gray-100 border-b"><th class="p-3">নাম</th><th class="p-3">মোবাইল</th><th class="p-3 text-right">বকেয়ার পরিমাণ</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
+                        <thead><tr class="bg-white/40 border-b border-gray-300/70"><th class="p-3">নাম</th><th class="p-3">মোবাইল</th><th class="p-3 text-right">বকেয়ার পরিমাণ</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
                         <tbody id="dueListBody"></tbody>
                     </table>
                 </div>
@@ -423,7 +480,7 @@
 
             <!-- Statements -->
             <div id="page-statements" class="app-page hidden-view">
-                <div class="bg-white p-4 md:p-6 rounded-2xl border shadow-sm overflow-x-auto">
+                <div class="glass p-4 md:p-6 rounded-2xl overflow-x-auto">
                     <div class="flex flex-wrap justify-between items-center mb-6 gap-4 no-print">
                         <div class="flex gap-2 items-center bg-gray-50 p-2 border rounded-xl">
                             <input type="date" id="stStart" class="border px-3 py-2 rounded-lg focus:outline-none">
@@ -437,7 +494,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center font-bold" id="stSummary"></div>
                     
                     <table class="w-full text-left border-collapse border min-w-[700px]">
-                        <thead><tr class="bg-gray-100 border-b"><th class="p-3 border">তারিখ</th><th class="p-3 border">বিবরণ</th><th class="p-3 border text-right">আয় (In)</th><th class="p-3 border text-right">ব্যয় (Out)</th></tr></thead>
+                        <thead><tr class="bg-white/40 border-b border-gray-300/70"><th class="p-3 border">তারিখ</th><th class="p-3 border">বিবরণ</th><th class="p-3 border text-right">আয় (In)</th><th class="p-3 border text-right">ব্যয় (Out)</th></tr></thead>
                         <tbody id="stBody"></tbody>
                     </table>
                 </div>
@@ -445,7 +502,7 @@
 
             <!-- Settings -->
             <div id="page-settings" class="app-page hidden-view no-print">
-                <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-2xl border shadow-sm">
+                <div class="max-w-4xl mx-auto glass p-6 md:p-10 rounded-2xl">
                     <h3 class="font-bold text-red-600 border-b pb-3 mb-6 text-xl md:text-2xl">সেটিংস ও ডাটা রিসেট</h3>
                     <p class="text-gray-700 mb-8 font-bold border-l-4 border-orange-500 pl-4 bg-orange-50 p-4 rounded-xl">সতর্কতা: এখান থেকে ডাটা রিসেট করলে তা আর কখনোই ফেরত পাওয়া যাবে না।</p>
                     
@@ -502,15 +559,17 @@
     };
 
     const getTodayStr = () => new Date().toISOString().split('T')[0];
-    const formatBNDate = (dStr) => {
+    const bnWeekDays = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
+    const formatBNDate = (dStr, withDay = false) => {
         const eng = ['1','2','3','4','5','6','7','8','9','0','January','February','March','April','May','June','July','August','September','October','November','December'];
         const bng = ['১','২','৩','৪','৫','৬','৭','৮','৯','০','জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
         let d = new Date(dStr || Date.now());
         let str = d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
         eng.forEach((e, i) => str = str.replace(new RegExp(e, 'g'), bng[i]));
+        if(withDay) str = `${bnWeekDays[d.getDay()]}, ${str}`;
         return str;
     };
-    document.getElementById('currentDateDisplay').innerHTML = `<i data-lucide="calendar-days" class="w-4 h-4"></i> ${formatBNDate()}`;
+    document.getElementById('currentDateDisplay').innerHTML = `<i data-lucide="calendar-days" class="w-4 h-4"></i> ${formatBNDate(null, true)}`;
 
     // Number to Words (Bangla)
     function bnNumberToWords(num) {
@@ -544,30 +603,45 @@
         return (neg ? 'মাইনাস ' : '') + parts.join(' ') + ' টাকা মাত্র';
     }
 
-    // --- UPDATE: SMS API with CORS Bypass Fix ---
+    // --- SMS API (BulkSMSBD) — real request with delivery-status verification ---
+    // পূর্বের কোডে <script src> ইনজেকশন দিয়ে রিকোয়েস্ট পাঠানো হতো, যেটার আসল রেসপন্স
+    // কখনোই চেক করা হতো না — তাই এপিআই ব্যর্থ হলেও "পাঠানো হয়েছে" দেখাতো। নিচের ভার্সনে
+    // প্রকৃত রেসপন্স চেক করে তবেই সফল/ব্যর্থ বার্তা দেখানো হয়।
     async function sendSMS(number, message) {
         const api_key = "M2M68W2DyHuhcmOGYrcz";
         const sender_id = "8809648909706";
-        let cleanNum = number.replace(/[^0-9]/g, '');
+        let cleanNum = (number || '').replace(/[^0-9]/g, '');
         if (cleanNum.length === 13 && cleanNum.startsWith('88')) cleanNum = cleanNum.substring(2);
-        if(!cleanNum.match(/^(01[3-9]\d{8})$/)) return; 
-        
-        // তৈরি করা মূল URL
+        if(!cleanNum.match(/^(01[3-9]\d{8})$/)) {
+            showToast("SMS পাঠানো যায়নি: মোবাইল নম্বরটি সঠিক নয়", true);
+            return false;
+        }
+
         const targetUrl = `https://bulksmsbd.net/api/smsapi?api_key=${encodeURIComponent(api_key)}&type=unicode&number=${encodeURIComponent(cleanNum)}&senderid=${encodeURIComponent(sender_id)}&message=${encodeURIComponent(message)}`;
-        
+
         try {
-            // Method 1: ব্রাউজারের Security (CORS) বাইপাস করার জন্য Script Tag Injection পদ্ধতি
-            // এটি সম্পূর্ণ নিরাপদ এবং থার্ড-পার্টি প্রক্সি ছাড়াই সরাসরি API-তে ডাটা পাঠায়।
-            const script = document.createElement('script');
-            script.src = targetUrl;
-            document.body.appendChild(script);
-            
-            // রিকোয়েস্ট চলে যাওয়ার পর স্ক্রিপ্টটি ডিলিট করে দেওয়া হচ্ছে
-            setTimeout(() => { document.body.removeChild(script); }, 2000);
-            
-            showToast("SMS রিকোয়েস্ট পাঠানো হয়েছে");
-        } catch(e) { 
-            console.error("SMS Error: ", e); 
+            const res = await fetch(targetUrl, { method: 'GET' });
+            const raw = await res.text();
+            let parsed = null;
+            try { parsed = JSON.parse(raw); } catch(_) { /* কিছু গেটওয়ে শুধু কোড ফেরত দেয়, JSON নয় */ }
+
+            // response_code 202 = SMS Submitted Successfully (bulksmsbd.net এর ডকুমেন্টেশন অনুযায়ী)
+            const code = parsed ? (parsed.response_code ?? parsed.responseCode) : raw.trim();
+            const success = (parsed && Number(code) === 202) || raw.trim() === '202';
+
+            if(success) {
+                showToast("SMS সফলভাবে পাঠানো হয়েছে");
+                return true;
+            } else {
+                const errMsg = (parsed && (parsed.error_message || parsed.success_message)) || raw;
+                console.error("SMS গেটওয়ে রেসপন্স:", raw);
+                showToast("SMS পাঠাতে ব্যর্থ: " + (errMsg || 'অজানা ত্রুটি'), true);
+                return false;
+            }
+        } catch(e) {
+            console.error("SMS Error: ", e);
+            showToast("SMS পাঠাতে ব্যর্থ হয়েছে (নেটওয়ার্ক সমস্যা)", true);
+            return false;
         }
     }
 
@@ -701,20 +775,39 @@
         });
         
         document.getElementById('dashboard-stats').innerHTML = `
-            <div class="bg-white p-4 rounded-2xl shadow-sm border"><p class="text-sm font-bold text-gray-500">বর্তমান ক্যাশ</p><h3 class="text-2xl font-bold text-blue-700">৳ ${totInAll - totOutAll}</h3></div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border"><p class="text-sm font-bold text-gray-500">আজকের বিল</p><h3 class="text-2xl font-bold text-purple-600">৳ ${todayBilled}</h3></div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border"><p class="text-sm font-bold text-gray-500">আজকের আয়</p><h3 class="text-2xl font-bold text-green-700">৳ ${todayIn}</h3></div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border"><p class="text-sm font-bold text-gray-500">আজকের বকেয়া</p><h3 class="text-2xl font-bold text-red-600">৳ ${todayDue}</h3></div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border"><p class="text-sm font-bold text-gray-500">আজকের ব্যয়</p><h3 class="text-2xl font-bold text-orange-600">৳ ${todayOut}</h3></div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="stat-icon-badge mb-3" style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE);"><i data-lucide="wallet" class="w-5 h-5 text-blue-700"></i></div>
+                <p class="text-sm font-bold text-gray-600">বর্তমান ক্যাশ</p><h3 class="text-xl md:text-2xl font-bold text-blue-700 mt-1">৳ ${totInAll - totOutAll}</h3>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="stat-icon-badge mb-3" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);"><i data-lucide="receipt" class="w-5 h-5 text-purple-700"></i></div>
+                <p class="text-sm font-bold text-gray-600">আজকের বিল</p><h3 class="text-xl md:text-2xl font-bold text-purple-600 mt-1">৳ ${todayBilled}</h3>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="stat-icon-badge mb-3" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);"><i data-lucide="trending-up" class="w-5 h-5 text-green-700"></i></div>
+                <p class="text-sm font-bold text-gray-600">আজকের আয়</p><h3 class="text-xl md:text-2xl font-bold text-green-700 mt-1">৳ ${todayIn}</h3>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="stat-icon-badge mb-3" style="background:linear-gradient(135deg,#FFE4E6,#FECDD3);"><i data-lucide="alarm-clock" class="w-5 h-5 text-red-600"></i></div>
+                <p class="text-sm font-bold text-gray-600">আজকের বকেয়া</p><h3 class="text-xl md:text-2xl font-bold text-red-600 mt-1">৳ ${todayDue}</h3>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="stat-icon-badge mb-3" style="background:linear-gradient(135deg,#FFEDD5,#FED7AA);"><i data-lucide="trending-down" class="w-5 h-5 text-orange-600"></i></div>
+                <p class="text-sm font-bold text-gray-600">আজকের ব্যয়</p><h3 class="text-xl md:text-2xl font-bold text-orange-600 mt-1">৳ ${todayOut}</h3>
+            </div>
         `;
+        if (window.lucide) window.lucide.createIcons();
         
         recent.sort((a,b) => b.timestamp - a.timestamp);
         const tbody = document.getElementById('dashboard-recent-tx');
         tbody.innerHTML = '';
         recent.slice(0,10).forEach(r => {
+            const nameCell = (r.type === 'INCOME' && r.customerId)
+                ? `<button type="button" class="font-bold text-[#047857] hover:underline text-left dash-tx-name" data-cid="${r.customerId}">${r.customerName || r.category}</button>`
+                : `<span class="font-bold">${r.customerName || r.category}</span>`;
             tbody.innerHTML += `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3 font-bold">${r.customerName || r.category}</td>
+                <tr class="border-b border-gray-200/70 hover:bg-white/40">
+                    <td class="p-3">${nameCell}</td>
                     <td class="p-3">${r.type === 'INCOME' ? '<span class="text-green-700 bg-green-50 px-2 py-1 rounded-full text-xs font-bold">আয়/কাজ</span>' : '<span class="text-red-700 bg-red-50 px-2 py-1 rounded-full text-xs font-bold">খরচ</span>'}</td>
                     <td class="p-3 text-right font-medium">৳ ${r.type === 'INCOME' ? r.total_amount - r.discount : r.total_amount}</td>
                     <td class="p-3 text-right text-green-600 font-bold">৳ ${r.paid_amount || 0}</td>
@@ -722,26 +815,75 @@
                 </tr>`;
         });
         if(recent.length === 0) tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">ডাটা নেই</td></tr>';
+        tbody.querySelectorAll('.dash-tx-name').forEach(btn => {
+            btn.addEventListener('click', () => navigate('profile', { id: btn.getAttribute('data-cid') }));
+        });
         hideLoader();
     }
 
+    // --- DASHBOARD QUICK CUSTOMER SEARCH ---
+    let dashSearchTimer = null;
+    window.dashboardSearchCustomers = (val) => {
+        clearTimeout(dashSearchTimer);
+        const box = document.getElementById('dashSearchResults');
+        const q = val.trim().toLowerCase();
+        if(!q) { box.classList.add('hidden-view'); box.innerHTML = ''; return; }
+        dashSearchTimer = setTimeout(async () => {
+            const snap = await getDocs(collection(db, "customers"));
+            const matches = [];
+            snap.forEach(docSnap => {
+                const d = docSnap.data();
+                if((d.name && d.name.toLowerCase().includes(q)) || (d.mobile && d.mobile.includes(q))) {
+                    matches.push({ id: docSnap.id, ...d });
+                }
+            });
+            if(matches.length === 0) {
+                box.innerHTML = '<div class="p-4 text-center text-gray-500 font-bold">কোনো গ্রাহক পাওয়া যায়নি</div>';
+            } else {
+                box.innerHTML = matches.slice(0,8).map(m => `
+                    <button type="button" class="w-full flex justify-between items-center px-4 py-3 border-b hover:bg-gray-50 text-left dash-search-item" data-cid="${m.id}">
+                        <span><span class="font-bold text-gray-800">${m.name}</span><span class="text-gray-500 text-sm block">${m.mobile || ''}</span></span>
+                        <span class="text-xs font-bold ${m.total_due > 0 ? 'text-red-500' : 'text-green-600'}">${m.total_due > 0 ? 'বকেয়া ৳'+m.total_due : 'পরিশোধিত'}</span>
+                    </button>`).join('');
+            }
+            box.classList.remove('hidden-view');
+            box.querySelectorAll('.dash-search-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    box.classList.add('hidden-view');
+                    document.getElementById('dashCustomerSearch').value = '';
+                    navigate('profile', { id: btn.getAttribute('data-cid') });
+                });
+            });
+        }, 250);
+    };
+    document.addEventListener('click', (e) => {
+        const box = document.getElementById('dashSearchResults');
+        const input = document.getElementById('dashCustomerSearch');
+        if(box && input && !box.contains(e.target) && e.target !== input) box.classList.add('hidden-view');
+    });
+
     // --- CUSTOMERS ---
     window.loadCustomers = async () => {
-        const q = document.getElementById('searchCustomer').value.toLowerCase();
+        const q = (document.getElementById('searchCustomer').value || '').toLowerCase().trim();
         const snap = await getDocs(collection(db, "customers"));
         const tbody = document.getElementById('customers-list');
         tbody.innerHTML = '';
-        snap.forEach(doc => {
-            const d = doc.data();
-            if(q && !d.name.toLowerCase().includes(q) && !d.mobile.includes(q)) return;
-            tbody.innerHTML += `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3 font-bold">${d.name}</td><td class="p-3">${d.mobile}</td>
-                    <td class="p-3 text-right">৳ ${d.total_billed || 0}</td>
-                    <td class="p-3 text-right font-bold ${d.total_due > 0 ? 'text-red-500' : 'text-green-600'}">৳ ${d.total_due || 0}</td>
-                    <td class="p-3 text-center"><button onclick="navigate('profile', {id: '${doc.id}'})" class="bg-[#047857] text-white px-4 py-1.5 rounded-lg font-bold">প্রোফাইল</button></td>
-                </tr>`;
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const nameL = (d.name || '').toLowerCase();
+            const mobileL = (d.mobile || '');
+            if(q && !nameL.includes(q) && !mobileL.includes(q)) return;
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-gray-200/70 hover:bg-white/40';
+            tr.innerHTML = `
+                <td class="p-3 font-bold">${d.name || ''}</td><td class="p-3">${d.mobile || ''}</td>
+                <td class="p-3 text-right">৳ ${d.total_billed || 0}</td>
+                <td class="p-3 text-right font-bold ${d.total_due > 0 ? 'text-red-500' : 'text-green-600'}">৳ ${d.total_due || 0}</td>
+                <td class="p-3 text-center"><button type="button" class="bg-[#047857] text-white px-4 py-1.5 rounded-lg font-bold view-profile-btn">প্রোফাইল</button></td>`;
+            tr.querySelector('.view-profile-btn').addEventListener('click', () => navigate('profile', { id: docSnap.id }));
+            tbody.appendChild(tr);
         });
+        if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">কোনো গ্রাহক পাওয়া যায়নি</td></tr>';
     }
 
     // --- PROFILE ---
@@ -771,17 +913,20 @@
         
         txs.forEach(docSnap => {
             const h = docSnap.data();
-            const b = h.total_amount - h.discount;
-            tbody.innerHTML += `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3 border">${formatBNDate(h.date)}</td>
-                    <td class="p-3 border font-bold ${h.category==='বকেয়া পরিশোধ'?'text-green-600':'text-gray-700'}">${h.category==='বকেয়া পরিশোধ' ? 'বকেয়া পরিশোধ' : 'সেবা/কাজ'}</td>
-                    <td class="p-3 border text-right">৳ ${b}</td>
-                    <td class="p-3 border text-right text-green-600 font-bold">৳ ${h.paid_amount}</td>
-                    <td class="p-3 border text-right text-red-500 font-bold">৳ ${h.due_amount > 0 ? h.due_amount : 0}</td>
-                    <td class="p-3 border text-center"><button onclick="navigate('invoice', {id: '${docSnap.id}'})" class="text-blue-600 font-bold hover:underline">রশিদ</button></td>
-                </tr>`;
+            const b = (h.total_amount || 0) - (h.discount || 0);
+            const tr = document.createElement('tr');
+            tr.className = 'border-b hover:bg-white/40';
+            tr.innerHTML = `
+                <td class="p-3 border">${formatBNDate(h.date)}</td>
+                <td class="p-3 border font-bold ${h.category==='বকেয়া পরিশোধ'?'text-green-600':'text-gray-700'}">${h.category==='বকেয়া পরিশোধ' ? 'বকেয়া পরিশোধ' : 'সেবা/কাজ'}</td>
+                <td class="p-3 border text-right">৳ ${b}</td>
+                <td class="p-3 border text-right text-green-600 font-bold">৳ ${h.paid_amount || 0}</td>
+                <td class="p-3 border text-right text-red-500 font-bold">৳ ${h.due_amount > 0 ? h.due_amount : 0}</td>
+                <td class="p-3 border text-center"><button type="button" class="text-blue-600 font-bold hover:underline prof-inv-btn">রশিদ</button></td>`;
+            tr.querySelector('.prof-inv-btn').addEventListener('click', () => navigate('invoice', { id: docSnap.id }));
+            tbody.appendChild(tr);
         });
+        if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500 border">কোনো লেনদেন নেই</td></tr>';
         hideLoader();
     }
 
@@ -862,7 +1007,7 @@
         div.className = "flex gap-3 items-start service-row";
         div.innerHTML = `
             <div class="flex-1"><label class="block text-sm text-gray-500 font-bold mb-1">সেবার নাম</label><select class="w-full px-3 py-3 border rounded-lg s-name bg-white" onchange="handleSRowChange(this)" required>${opts}</select><input type="text" placeholder="কাস্টম নাম" class="w-full px-3 py-2 border rounded mt-2 hidden s-custom"></div>
-            <div class="w-32"><label class="block text-sm text-gray-500 font-bold mb-1">কর্মী</label><input type="text" placeholder="নাম" class="w-full px-3 py-3 border rounded-lg s-worker"></div>
+            <div class="w-32"><label class="block text-sm text-gray-500 font-bold mb-1">বিস্তারিত</label><input type="text" placeholder="বিস্তারিত লিখুন" class="w-full px-3 py-3 border rounded-lg s-worker"></div>
             <div class="w-20"><label class="block text-sm text-gray-500 font-bold mb-1">পরিমাণ</label><input type="number" value="1" min="1" class="w-full px-3 py-3 border rounded-lg text-center s-qty" oninput="calcBillFinal()" required></div>
             <div class="w-24"><label class="block text-sm text-gray-500 font-bold mb-1">রেট (৳)</label><input type="number" value="0" min="0" class="w-full px-3 py-3 border rounded-lg text-center s-rate" oninput="calcBillFinal()" required></div>
             <div class="w-28"><label class="block text-sm text-gray-500 font-bold mb-1">মোট (৳)</label><input type="number" value="0" class="w-full px-3 py-3 border rounded-lg text-center bg-gray-100 font-bold s-total" readonly></div>
@@ -975,15 +1120,18 @@
         const snap = await getDocs(query(collection(db, "customers"), where("total_due", ">", 0)));
         const tbody = document.getElementById('dueListBody');
         tbody.innerHTML = '';
-        snap.forEach(doc => {
-            const d = doc.data();
-            tbody.innerHTML += `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3 font-bold"><a href="#" onclick="navigate('profile', {id:'${doc.id}'})" class="text-[#047857] hover:underline">${d.name}</a></td>
-                    <td class="p-3">${d.mobile}</td>
-                    <td class="p-3 text-right text-red-600 font-bold">৳ ${d.total_due}</td>
-                    <td class="p-3 text-center"><button onclick="sendDueSMS('${d.mobile}', '${d.name}', ${d.total_billed}, ${d.total_paid}, ${d.total_due})" class="bg-[#4F46E5] text-white px-4 py-1.5 rounded-lg font-bold">SMS পাঠান</button></td>
-                </tr>`;
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-gray-200/70 hover:bg-white/40';
+            tr.innerHTML = `
+                <td class="p-3 font-bold"><a href="#" class="text-[#047857] hover:underline due-profile-link">${d.name || ''}</a></td>
+                <td class="p-3">${d.mobile || ''}</td>
+                <td class="p-3 text-right text-red-600 font-bold">৳ ${d.total_due || 0}</td>
+                <td class="p-3 text-center"><button type="button" class="bg-[#4F46E5] text-white px-4 py-1.5 rounded-lg font-bold due-sms-btn">SMS পাঠান</button></td>`;
+            tr.querySelector('.due-profile-link').addEventListener('click', (e) => { e.preventDefault(); navigate('profile', { id: docSnap.id }); });
+            tr.querySelector('.due-sms-btn').addEventListener('click', () => sendDueSMS(d.mobile, d.name, d.total_billed || 0, d.total_paid || 0, d.total_due || 0));
+            tbody.appendChild(tr);
         });
         if(snap.empty) tbody.innerHTML = '<tr><td colspan="4" class="text-center p-6 text-green-600 font-bold">কোনো বকেয়া নেই।</td></tr>';
         hideLoader();
@@ -1031,10 +1179,20 @@
     // --- INVOICE ---
     async function loadInvoice(txId) {
         showLoader();
-        const tx = (await getDoc(doc(db, "transactions", txId))).data();
-        
-        document.getElementById('invName').innerText = tx.customerName;
-        document.getElementById('invMobile').innerText = tx.customerMobile;
+        const printBtn = document.getElementById('printInvoiceBtn');
+        if(printBtn) printBtn.disabled = true; // avoid printing before data is ready
+        const num = (v) => (typeof v === 'number' && !isNaN(v)) ? v : (parseFloat(v) || 0);
+
+        const txDocSnap = await getDoc(doc(db, "transactions", txId));
+        if(!txDocSnap.exists()) { showToast('রশিদ পাওয়া যায়নি', true); hideLoader(); return; }
+        const tx = txDocSnap.data();
+        tx.total_amount = num(tx.total_amount);
+        tx.discount = num(tx.discount);
+        tx.paid_amount = num(tx.paid_amount);
+        tx.due_amount = num(tx.due_amount);
+
+        document.getElementById('invName').innerText = tx.customerName || '';
+        document.getElementById('invMobile').innerText = tx.customerMobile || '';
         document.getElementById('invId').innerText = "#JS-" + txId.substring(0,5).toUpperCase();
         document.getElementById('invDate').innerText = formatBNDate(tx.date);
         
@@ -1046,21 +1204,25 @@
         } else {
             document.getElementById('invItemsArea').classList.remove('hidden-view');
             const itemsSnap = await getDocs(collection(db, `transactions/${txId}/items`));
-            itemsSnap.forEach(doc => {
-                const it = doc.data();
-                iBody.innerHTML += `<tr><td class="p-2 border border-gray-300">${it.service_name}</td><td class="p-2 border border-gray-300">${it.customer_worker_name||''}</td><td class="p-2 border border-gray-300 text-center">${it.qty}</td><td class="p-2 border border-gray-300 text-right">${it.rate}</td><td class="p-2 border border-gray-300 text-right font-bold text-gray-800">৳ ${it.amount}</td></tr>`;
+            itemsSnap.forEach(itemDoc => {
+                const it = itemDoc.data();
+                iBody.innerHTML += `<tr><td class="p-2 border border-gray-300">${it.service_name||''}</td><td class="p-2 border border-gray-300">${it.customer_worker_name||''}</td><td class="p-2 border border-gray-300 text-center">${num(it.qty)}</td><td class="p-2 border border-gray-300 text-right">${num(it.rate)}</td><td class="p-2 border border-gray-300 text-right font-bold text-gray-800">৳ ${num(it.amount)}</td></tr>`;
             });
         }
         
         // Due calculation logic for invoice
         const c_id = tx.customerId;
-        const allTxs = await getDocs(query(collection(db, "transactions"), where("customerId", "==", c_id), orderBy("timestamp", "asc")));
         let rem_due = 0;
-        let isPastTx = true;
-        allTxs.forEach(d => {
-            if(isPastTx) rem_due += d.data().due_amount;
-            if(d.id === txId) isPastTx = false; // Stop adding after current tx
-        });
+        if(c_id) {
+            const allTxs = await getDocs(query(collection(db, "transactions"), where("customerId", "==", c_id), orderBy("timestamp", "asc")));
+            let isPastTx = true;
+            allTxs.forEach(d => {
+                if(isPastTx) rem_due += num(d.data().due_amount);
+                if(d.id === txId) isPastTx = false; // Stop adding after current tx
+            });
+        } else {
+            rem_due = tx.due_amount;
+        }
         
         const sBox = document.getElementById('invSummaryBox');
         if(tx.category === 'বকেয়া পরিশোধ') {
@@ -1087,6 +1249,7 @@
         else if (rem_due < 0) wBox.innerText = `অ্যাডভান্স জমা (কথায়): ${bnNumberToWords(Math.abs(rem_due))}`;
         else wBox.innerText = `কোনো বকেয়া নেই — হিসাব সম্পূর্ণ পরিশোধিত`;
         
+        if(printBtn) printBtn.disabled = false; // data fully rendered — now safe to print
         hideLoader();
     }
 
