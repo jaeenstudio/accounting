@@ -197,6 +197,9 @@
                 <button onclick="openMobileMenu()" class="md:hidden w-9 h-9 rounded-xl bg-[#ECFDF5] text-[#047857] flex items-center justify-center shrink-0">
                     <i data-lucide="menu" class="w-5 h-5"></i>
                 </button>
+                <button id="backBtn" onclick="goBack()" class="hidden-view w-9 h-9 rounded-xl bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center shrink-0">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
                 <div class="w-9 h-9 rounded-xl bg-[#ECFDF5] text-[#047857] flex items-center justify-center hidden md:flex">
                     <i data-lucide="layout-grid" class="w-5 h-5"></i>
                 </div>
@@ -374,14 +377,20 @@
                         <button onclick="navToNewBillFromProfile()" class="full-only px-6 py-3 bg-[#F59E0B] text-gray-900 font-bold rounded-xl shadow">+ নতুন কাজ</button>
                     </div>
                     
-                    <div id="profDueBox" class="bg-red-50 p-4 rounded-xl border border-red-200 mb-4 flex flex-col md:flex-row justify-between items-center gap-4 hidden-view">
-                        <p class="text-red-600 font-bold text-xl">বর্তমান বকেয়া: ৳ <span id="profDueAmt">0</span></p>
-                        <form onsubmit="payDue(event)" class="full-only flex flex-wrap gap-2 justify-end">
-                            <input type="hidden" id="payDueCustId">
-                            <input type="date" id="payDueDate" class="border px-3 py-2 rounded-xl focus:outline-none" required>
-                            <input type="number" id="payDueAmt" placeholder="পরিমাণ" class="border px-3 py-2 rounded-xl w-32 focus:outline-none" required>
-                            <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-xl font-bold">জমা নিন</button>
-                        </form>
+                    <div id="profDueBox" class="bg-red-50 p-4 rounded-xl border border-red-200 mb-4 hidden-view">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <p class="text-red-600 font-bold text-xl">বর্তমান বকেয়া: ৳ <span id="profDueAmt">0</span></p>
+                            <form onsubmit="payDue(event)" class="full-only flex flex-wrap gap-2 justify-end">
+                                <input type="hidden" id="payDueCustId">
+                                <input type="date" id="payDueDate" class="border px-3 py-2 rounded-xl focus:outline-none" required>
+                                <input type="number" id="payDueAmt" placeholder="পরিমাণ" class="border px-3 py-2 rounded-xl w-32 focus:outline-none" required>
+                                <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-xl font-bold">জমা নিন</button>
+                            </form>
+                        </div>
+                        <div id="settleFromAdvanceRow" class="full-only hidden-view mt-3 pt-3 border-t border-red-200 flex flex-col md:flex-row justify-between items-center gap-3">
+                            <p class="text-purple-700 font-bold">গ্রাহকের অগ্রিম জমা থেকে ৳ <span id="settleAdvanceAmtTxt">0</span> কেটে বকেয়া পরিশোধ করা সম্ভব।</p>
+                            <button type="button" onclick="settleDueFromAdvance()" class="bg-purple-600 text-white px-5 py-2 rounded-xl font-bold shrink-0">অগ্রিম থেকে বকেয়া পরিশোধ করুন</button>
+                        </div>
                     </div>
 
                     <div id="profAdvanceBox" class="bg-purple-50 p-4 rounded-xl border border-purple-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -781,6 +790,9 @@
             document.getElementById('view-login').classList.add('hidden-view');
             document.getElementById('view-app').classList.remove('hidden-view');
             document.getElementById('authForm').reset();
+            window.navHistory = [];
+            window.currentPage = null;
+            window.currentParams = {};
             await resolveSession(user);
             navigate('dashboard');
         } else {
@@ -806,9 +818,22 @@
     // Navigation
     const adminOnlyPages = ['users_manage', 'settings'];
     const fullOnlyPages = ['new_bill', 'expenses'];
-    window.navigate = (page, params = {}) => {
+    window.navHistory = [];
+    window.currentPage = null;
+    window.currentParams = {};
+    window.navigate = (page, params = {}, isBack = false) => {
         if(adminOnlyPages.includes(page) && !isAdmin()) { showToast('এই পেইজে প্রবেশের অনুমতি নেই', true); page = 'dashboard'; }
         if(fullOnlyPages.includes(page) && isViewOnly()) { showToast('এই পেইজে প্রবেশের অনুমতি নেই', true); page = 'dashboard'; }
+
+        if(!isBack && window.currentPage && window.currentPage !== page) {
+            window.navHistory.push({ page: window.currentPage, params: window.currentParams });
+        }
+        window.currentPage = page;
+        window.currentParams = params;
+
+        const backBtn = document.getElementById('backBtn');
+        if(backBtn) backBtn.classList.toggle('hidden-view', window.navHistory.length === 0);
+
         closeMobileMenu();
         document.querySelectorAll('.app-page').forEach(el => el.classList.add('hidden-view'));
         document.querySelectorAll('.nav-link').forEach(el => { el.classList.remove('active-nav', 'text-[#FDE68A]'); });
@@ -836,6 +861,12 @@
         }
         if(page === 'profile') loadProfile(params.id);
         if(page === 'invoice') loadInvoice(params.id);
+    };
+
+    window.goBack = () => {
+        if(window.navHistory.length === 0) { navigate('dashboard'); return; }
+        const prev = window.navHistory.pop();
+        navigate(prev.page, prev.params, true);
     };
 
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -1076,11 +1107,18 @@
             document.getElementById('profAdvanceAmt').innerText = c.advance_balance || 0;
 
             const dueBox = document.getElementById('profDueBox');
+            const settleRow = document.getElementById('settleFromAdvanceRow');
             if(c.total_due > 0) {
                 dueBox.classList.remove('hidden-view');
                 document.getElementById('profDueAmt').innerText = c.total_due;
                 document.getElementById('payDueAmt').max = c.total_due;
-            } else { dueBox.classList.add('hidden-view'); }
+                const advBal = c.advance_balance || 0;
+                if(advBal > 0 && settleRow) {
+                    const settleAmt = Math.min(c.total_due, advBal);
+                    document.getElementById('settleAdvanceAmtTxt').innerText = settleAmt;
+                    settleRow.classList.remove('hidden-view');
+                } else if(settleRow) { settleRow.classList.add('hidden-view'); }
+            } else { dueBox.classList.add('hidden-view'); if(settleRow) settleRow.classList.add('hidden-view'); }
 
             const tbody = document.getElementById('profHistory');
             tbody.innerHTML = '';
@@ -1166,7 +1204,7 @@
         await batch.commit();
         
         const rDue = (cData.total_due || 0) - paid;
-        sendSMS(cData.mobile, `প্রিয় ${cData.name}, আপনার মোট বিল ৳${cData.total_billed}, জমা ৳${(cData.total_paid||0)+paid}, ` + (rDue > 0 ? `অবশিষ্ট বকেয়া ৳${rDue}।` : `সম্প৉42র্ণ হিসাব পরিশোধিত।`) + " মোবাইল: 01733-296262");
+        sendSMS(cData.mobile, `প্রিয় ${cData.name}, আপনার মোট বিল ৳${cData.total_billed}, জমা ৳${(cData.total_paid||0)+paid}, ` + (rDue > 0 ? `অবশিষ্ট বকেয়া ৳${rDue}।` : `সম্পূর্ণ হিসাব পরিশোধিত।`) + " মোবাইল: 01733-296262");
         
         navigate('invoice', {id: newTxRef.id});
         hideLoader();
@@ -1202,6 +1240,49 @@
             showToast('সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
         }
         hideLoader();
+    };
+
+    // --- অগ্রিম থেকে বকেয়া পরিশোধ ---
+    window.settleDueFromAdvance = async () => {
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
+        const cid = document.getElementById('payDueCustId').value;
+        if(!cid) return;
+        showLoader();
+        try {
+            const cData = (await getDoc(doc(db, "customers", cid))).data();
+            if(!cData) { showToast('গ্রাহক পাওয়া যায়নি', true); hideLoader(); return; }
+            const advBal = cData.advance_balance || 0;
+            const due = cData.total_due || 0;
+            const settleAmt = Math.min(due, advBal);
+            if(settleAmt <= 0) { showToast('পরিশোধ করার মতো কিছু নেই', true); hideLoader(); return; }
+            if(!confirm(`অগ্রিম জমা থেকে ৳${settleAmt} কেটে বকেয়া পরিশোধ করতে চান?`)) { hideLoader(); return; }
+
+            const batch = writeBatch(db);
+            const newTxRef = doc(collection(db, "transactions"));
+            batch.set(newTxRef, {
+                customerId: cid, customerName: cData.name, customerMobile: cData.mobile,
+                type: 'INCOME', category: 'বকেয়া পরিশোধ (অগ্রিম থেকে)',
+                total_amount: 0, discount: 0, paid_amount: settleAmt, due_amount: -settleAmt,
+                date: getTodayStr(), timestamp: serverTimestamp(), ownerId: window.currentOwnerId
+            });
+            batch.update(doc(db, "customers", cid), {
+                total_paid: (cData.total_paid || 0) + settleAmt,
+                total_due: due - settleAmt,
+                advance_balance: advBal - settleAmt
+            });
+            await batch.commit();
+
+            const rDue = due - settleAmt;
+            sendSMS(cData.mobile, `প্রিয় ${cData.name}, আপনার অগ্রিম জমা থেকে ৳${settleAmt} বকেয়া পরিশোধ করা হয়েছে। ` + (rDue > 0 ? `অবশিষ্ট বকেয়া ৳${rDue}।` : `সম্পূর্ণ হিসাব পরিশোধিত।`) + " মোবাইল: 01733-296262");
+
+            showToast('অগ্রিম থেকে বকেয়া সফলভাবে পরিশোধ হয়েছে');
+            navigate('invoice', {id: newTxRef.id});
+            hideLoader();
+        } catch(err) {
+            console.error('অগ্রিম থেকে বকেয়া পরিশোধ এরর:', err);
+            showToast('সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
+            hideLoader();
+        }
     };
 
     // --- NEW BILL ---
