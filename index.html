@@ -57,6 +57,7 @@
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
         .hidden-view { display: none !important; }
+        .view-only-mode .full-only { display: none !important; }
         .active-nav { background: rgba(255,255,255,0.16) !important; border-left: 4px solid var(--gold) !important; font-weight: bold; backdrop-filter: blur(6px); }
 
         /* --- Glassmorphism system (applied across dashboard / cards / tables) --- */
@@ -150,31 +151,37 @@
 
 <!-- MAIN APP VIEW -->
 <div id="view-app" class="web-container flex-1 flex flex-col md:flex-row max-w-[1450px] mx-auto w-full md:my-6 md:gap-5 bg-transparent hidden-view">
-    
-    <!-- Sidebar -->
-    <div class="w-full md:w-64 flex flex-col text-white bg-[#047857] shrink-0 md:rounded-2xl md:shadow-lg md:h-[calc(100vh-3rem)] md:sticky md:top-6 overflow-hidden no-print" style="background: linear-gradient(165deg, #0F172A 0%, #1E293B 55%, #065F46 130%);">
-        <div class="p-4 md:p-6 items-center gap-3 border-b border-white/10 hidden md:flex">
+
+    <!-- Mobile overlay (tap to close side menu) -->
+    <div id="mobileNavOverlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden" onclick="closeMobileMenu()"></div>
+
+    <!-- Sidebar (mobile: fixed off-canvas drawer sliding from the left; desktop: static sticky column) -->
+    <div id="appSidebar" class="fixed inset-y-0 left-0 z-40 w-72 -translate-x-full transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 md:w-64 flex flex-col text-white bg-[#047857] shrink-0 md:rounded-2xl md:shadow-lg md:h-[calc(100vh-3rem)] md:sticky md:top-6 overflow-hidden no-print" style="background: linear-gradient(165deg, #0F172A 0%, #1E293B 55%, #065F46 130%);">
+        <div class="p-4 md:p-6 flex items-center gap-3 border-b border-white/10">
             <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
                 <i data-lucide="landmark" class="w-5 h-5 text-[#F59E0B]"></i>
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
                 <h2 class="text-lg font-bold leading-tight truncate" style="font-family: 'Anek Bangla', sans-serif;">জাঈন স্টুডিও</h2>
                 <p class="text-xs mt-0.5 text-[#F59E0B] truncate">মাদারগঞ্জ, জামাল্পুর</p>
             </div>
+            <button onclick="closeMobileMenu()" class="md:hidden w-9 h-9 shrink-0 rounded-lg bg-white/10 flex items-center justify-center">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
-        <nav class="flex-1 flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto md:py-4 md:px-3 whitespace-nowrap gap-1">
-            <a href="#dashboard" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="dashboard"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>ড্যাশবোর্ড</span></a>
-            <a href="#new_bill" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="new_bill"><i data-lucide="file-plus-2" class="w-5 h-5"></i><span>নতুন বিল এন্ট্রি</span></a>
-            <a href="#customers" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="customers"><i data-lucide="users" class="w-5 h-5"></i><span>গ্রাহক ডাটাবেজ</span></a>
-            <a href="#expenses" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="expenses"><i data-lucide="wallet" class="w-5 h-5"></i><span>দৈনিক খরচ</span></a>
-            <a href="#statements" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="statements"><i data-lucide="bar-chart-3" class="w-5 h-5"></i><span>স্টেটমেন্ট</span></a>
-            <a href="#due_list" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="due_list"><i data-lucide="alarm-clock" class="w-5 h-5"></i><span>বকেয়া তালিকা</span></a>
-            
-            <div class="hidden md:block my-2 border-t border-white/10"></div>
-            <a href="#users_manage" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent text-[#FDE68A]" data-target="users_manage"><i data-lucide="user-plus" class="w-5 h-5"></i><span>স্টাফ / ইউজার</span></a>
-            <a href="#settings" class="nav-link inline-flex md:flex items-center gap-3 px-4 py-3 md:py-2.5 md:rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="settings"><i data-lucide="settings-2" class="w-5 h-5"></i><span>সেটিংস</span></a>
+        <nav class="flex-1 flex flex-col overflow-y-auto py-3 px-3 gap-1">
+            <a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="dashboard"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>ড্যাশবোর্ড</span></a>
+            <a href="#new_bill" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="new_bill"><i data-lucide="file-plus-2" class="w-5 h-5"></i><span>নতুন বিল এন্ট্রি</span></a>
+            <a href="#customers" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="customers"><i data-lucide="users" class="w-5 h-5"></i><span>গ্রাহক ডাটাবেজ</span></a>
+            <a href="#expenses" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="expenses"><i data-lucide="wallet" class="w-5 h-5"></i><span>দৈনিক খরচ</span></a>
+            <a href="#statements" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="statements"><i data-lucide="bar-chart-3" class="w-5 h-5"></i><span>স্টেটমেন্ট</span></a>
+            <a href="#due_list" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="due_list"><i data-lucide="alarm-clock" class="w-5 h-5"></i><span>বকেয়া তালিকা</span></a>
+
+            <div class="my-2 border-t border-white/10"></div>
+            <a href="#users_manage" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent text-[#FDE68A]" data-target="users_manage"><i data-lucide="user-plus" class="w-5 h-5"></i><span>স্টাফ / ইউজার</span></a>
+            <a href="#settings" class="nav-link flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl font-medium hover:bg-white/5 border-l-4 border-transparent" data-target="settings"><i data-lucide="settings-2" class="w-5 h-5"></i><span>সেটিংস</span></a>
         </nav>
-        <div class="p-3 md:p-4 border-t border-white/10 hidden md:block">
+        <div class="p-3 md:p-4 border-t border-white/10">
             <button onclick="logout()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white/85 hover:text-white hover:bg-white/5">
                 <i data-lucide="log-out" class="w-5 h-5"></i> লগআউট করুন
             </button>
@@ -187,12 +194,17 @@
         <!-- Header -->
         <header class="bg-white/90 backdrop-blur p-4 md:rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center shrink-0 md:mb-5 no-print">
             <div class="flex items-center gap-2">
+                <button onclick="openMobileMenu()" class="md:hidden w-9 h-9 rounded-xl bg-[#ECFDF5] text-[#047857] flex items-center justify-center shrink-0">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
                 <div class="w-9 h-9 rounded-xl bg-[#ECFDF5] text-[#047857] flex items-center justify-center hidden md:flex">
                     <i data-lucide="layout-grid" class="w-5 h-5"></i>
                 </div>
                 <h2 id="pageTitle" class="text-xl md:text-2xl font-bold text-gray-700">ড্যাশবোর্ড</h2>
             </div>
-            <div class="text-sm font-bold px-4 py-2 rounded-xl bg-[#F59E0B] text-gray-900 shadow-sm flex items-center gap-2" id="currentDateDisplay"></div>
+            <div class="flex items-center">
+                <div class="text-sm font-bold px-4 py-2 rounded-xl bg-[#F59E0B] text-gray-900 shadow-sm flex items-center gap-2" id="currentDateDisplay"></div>
+            </div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-4 md:p-6 relative" id="print-area">
@@ -242,6 +254,19 @@
                                 <label class="block font-bold mb-1.5 text-gray-700">পাসওয়ার্ড</label>
                                 <input type="text" id="staffPassword" placeholder="কমপক্ষে ৬ অক্ষর" class="w-full px-4 py-2 border rounded-xl bg-gray-50 focus:outline-none focus:border-[#4F46E5]" required minlength="6">
                             </div>
+                            <div>
+                                <label class="block font-bold mb-1.5 text-gray-700">অ্যাক্সেস লেভেল</label>
+                                <select id="staffRole" class="w-full px-4 py-2 border rounded-xl bg-gray-50 focus:outline-none focus:border-[#4F46E5]">
+                                    <option value="full">ফুল এক্সেস (সব কিছু কাস্টমাইজ: এডিট/ডিলিট সহ)</option>
+                                    <option value="view">শুধু ভিউ এক্সেস (দেখা যাবে, পরিবর্তন করা যাবে না)</option>
+                                </select>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                                <label class="flex items-start gap-2 cursor-pointer">
+                                    <input type="checkbox" id="staffSeparate" class="mt-1 w-4 h-4">
+                                    <span class="text-sm font-bold text-blue-800">সেপারেট হিসাব — এই স্টাফের ড্যাশবোর্ড একদম শুরু থেকে শুরু হবে এবং তার গ্রাহক/লেনদেন আপনার হিসাব থেকে সম্পূর্ণ আলাদা থাকবে।</span>
+                                </label>
+                            </div>
                             <button type="submit" class="w-full py-3 rounded-xl text-white font-bold bg-[#4F46E5] hover:bg-[#4338CA]">
                                 একাউন্ট তৈরি করুন
                             </button>
@@ -251,8 +276,8 @@
                     <div class="glass p-6 rounded-2xl md:col-span-2">
                         <h3 class="font-bold text-xl mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-gray-500"></i> বর্তমান স্টাফ তালিকা</h3>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse min-w-[400px]">
-                                <thead><tr class="bg-white/40 border-b border-gray-300/70"><th class="p-3">ইউজারনেম</th><th class="p-3">তৈরির তারিখ</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
+                            <table class="w-full text-left border-collapse min-w-[500px]">
+                                <thead><tr class="bg-white/40 border-b border-gray-300/70"><th class="p-3">ইউজারনেম</th><th class="p-3">অ্যাক্সেস</th><th class="p-3">হিসাব</th><th class="p-3">তৈরির তারিখ</th><th class="p-3 text-center">অ্যাকশন</th></tr></thead>
                                 <tbody id="staff-list"></tbody>
                             </table>
                         </div>
@@ -346,18 +371,29 @@
                             <h3 class="text-2xl md:text-3xl font-bold text-[#047857]" id="profName">নাম</h3>
                             <p class="text-gray-600 font-bold mt-1">মোবাইলঃ <span id="profMobile"></span></p>
                         </div>
-                        <button onclick="navToNewBillFromProfile()" class="px-6 py-3 bg-[#F59E0B] text-gray-900 font-bold rounded-xl shadow">+ নতুন কাজ</button>
+                        <button onclick="navToNewBillFromProfile()" class="full-only px-6 py-3 bg-[#F59E0B] text-gray-900 font-bold rounded-xl shadow">+ নতুন কাজ</button>
                     </div>
                     
-                    <div id="profDueBox" class="bg-red-50 p-4 rounded-xl border border-red-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 hidden-view">
+                    <div id="profDueBox" class="bg-red-50 p-4 rounded-xl border border-red-200 mb-4 flex flex-col md:flex-row justify-between items-center gap-4 hidden-view">
                         <p class="text-red-600 font-bold text-xl">বর্তমান বকেয়া: ৳ <span id="profDueAmt">0</span></p>
-                        <form onsubmit="payDue(event)" class="flex flex-wrap gap-2 justify-end">
+                        <form onsubmit="payDue(event)" class="full-only flex flex-wrap gap-2 justify-end">
                             <input type="hidden" id="payDueCustId">
                             <input type="date" id="payDueDate" class="border px-3 py-2 rounded-xl focus:outline-none" required>
                             <input type="number" id="payDueAmt" placeholder="পরিমাণ" class="border px-3 py-2 rounded-xl w-32 focus:outline-none" required>
                             <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-xl font-bold">জমা নিন</button>
                         </form>
                     </div>
+
+                    <div id="profAdvanceBox" class="bg-purple-50 p-4 rounded-xl border border-purple-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <p class="text-purple-700 font-bold text-xl">অগ্রিম জমা স্বল্ব: ৳ <span id="profAdvanceAmt">0</span></p>
+                        <form onsubmit="depositAdvance(event)" class="full-only flex flex-wrap gap-2 justify-end">
+                            <input type="hidden" id="advCustId">
+                            <input type="date" id="advDate" class="border px-3 py-2 rounded-xl focus:outline-none" required>
+                            <input type="number" id="advAmt" placeholder="পরিমাণ" min="1" class="border px-3 py-2 rounded-xl w-32 focus:outline-none" required>
+                            <button type="submit" class="bg-purple-600 text-white px-5 py-2 rounded-xl font-bold">অগ্রিম জমা রাখুন</button>
+                        </form>
+                    </div>
+                    <p class="text-xs text-purple-500 -mt-4 mb-6 font-bold">* এই জমা করা অগ্রিম টাকা পরবর্তী যেকোনো নতুন বিলের বকেয়া থেকে স্বয়ংক্রিয়ভাবে কর্তন হয়ে যাবে।</p>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                         <div class="bg-gray-100 p-4 rounded-xl border"><p class="font-bold text-gray-600">মোট কাজ (৳)</p><h4 class="text-2xl md:text-3xl font-bold mt-1 text-gray-800" id="profTotBill">0</h4></div>
@@ -368,7 +404,7 @@
                 
                 <div class="glass p-4 md:p-6 rounded-2xl overflow-x-auto">
                     <h4 class="font-bold text-xl mb-4 text-gray-800">কাজের হিস্ট্রি</h4>
-                    <table class="w-full text-left border-collapse border min-w-[700px]">
+                    <table class="w-full text-left border-collapse border min-w-[750px]">
                         <thead><tr class="bg-white/40 border-b border-gray-300/70"><th class="p-3 border">তারিখ</th><th class="p-3 border">বিবরণ</th><th class="p-3 border text-right">মোট বিল</th><th class="p-3 border text-right">জমা</th><th class="p-3 border text-right">বকেয়া</th><th class="p-3 border text-center">অ্যাকশন</th></tr></thead>
                         <tbody id="profHistory"></tbody>
                     </table>
@@ -677,11 +713,75 @@
 
     window.logout = async () => await signOut(auth);
 
-    onAuthStateChanged(auth, (user) => {
+    // --- ROLE / ওনার (হিসাব) স্কোপ ---
+    // currentRole: 'admin' (মূল মালিক - সব এক্সেস) | 'full' (স্টাফ, সব কাস্টমাইজ) | 'view' (স্টাফ, শুধু ভিউ)
+    // currentOwnerId: যে UID-এর নামে গ্রাহক/লেনদেন ডাটা সেভ ও লোড হবে (আলাদা হিসাব হলে নিজের UID, নাহলে যে অ্যাডমিনের হিসাবে যুক্ত তার UID)
+    window.currentRole = 'admin';
+    window.currentOwnerId = null;
+    window.currentStaffDocId = null;
+
+    async function resolveSession(user) {
+        window.currentRole = 'admin';
+        window.currentOwnerId = user.uid;
+        window.currentStaffDocId = null;
+        try {
+            const snap = await getDocs(query(collection(db, "staff"), where("email", "==", user.email)));
+            if(!snap.empty) {
+                const sData = snap.docs[0].data();
+                window.currentStaffDocId = snap.docs[0].id;
+                window.currentRole = sData.role === 'view' ? 'view' : 'full';
+                window.currentOwnerId = sData.separate ? user.uid : (sData.parentOwnerId || user.uid);
+            }
+        } catch(err) {
+            console.error('সেশন রোল লোড এরর:', err);
+        }
+        applyRoleUI();
+    }
+
+    function isViewOnly() { return window.currentRole === 'view'; }
+    function isAdmin() { return window.currentRole === 'admin'; }
+
+    function applyRoleUI() {
+        const staffOnlyNav = document.querySelector('.nav-link[data-target="users_manage"]');
+        const settingsNav = document.querySelector('.nav-link[data-target="settings"]');
+        const newBillNav = document.querySelector('.nav-link[data-target="new_bill"]');
+        const expensesNav = document.querySelector('.nav-link[data-target="expenses"]');
+        if(staffOnlyNav) staffOnlyNav.classList.toggle('hidden-view', !isAdmin());
+        if(settingsNav) settingsNav.classList.toggle('hidden-view', !isAdmin());
+        if(newBillNav) newBillNav.classList.toggle('hidden-view', isViewOnly());
+        if(expensesNav) expensesNav.classList.toggle('hidden-view', isViewOnly());
+
+        document.body.classList.toggle('view-only-mode', isViewOnly());
+
+        let badge = document.getElementById('roleBadge');
+        const dateBox = document.getElementById('currentDateDisplay');
+        if(!badge && dateBox) {
+            badge = document.createElement('div');
+            badge.id = 'roleBadge';
+            badge.className = 'text-xs font-bold px-3 py-1.5 rounded-xl mr-2 hidden-view';
+            dateBox.parentElement.insertBefore(badge, dateBox);
+        }
+        if(badge) {
+            if(isViewOnly()) {
+                badge.innerText = 'শুধু ভিউ এক্সেস';
+                badge.className = 'text-xs font-bold px-3 py-1.5 rounded-xl mr-2 bg-orange-50 text-orange-700 border border-orange-200';
+            } else if(!isAdmin()) {
+                badge.innerText = 'স্টাফ - ফুল এক্সেস';
+                badge.className = 'text-xs font-bold px-3 py-1.5 rounded-xl mr-2 bg-blue-50 text-blue-700 border border-blue-200';
+            } else {
+                badge.classList.add('hidden-view');
+            }
+            if(!isAdmin()) badge.classList.remove('hidden-view');
+        }
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    onAuthStateChanged(auth, async (user) => {
         if(user) {
             document.getElementById('view-login').classList.add('hidden-view');
             document.getElementById('view-app').classList.remove('hidden-view');
             document.getElementById('authForm').reset();
+            await resolveSession(user);
             navigate('dashboard');
         } else {
             document.getElementById('view-app').classList.add('hidden-view');
@@ -689,8 +789,27 @@
         }
     });
 
+    // --- Mobile Side Menu Toggle ---
+    window.openMobileMenu = () => {
+        const sidebar = document.getElementById('appSidebar');
+        const overlay = document.getElementById('mobileNavOverlay');
+        if(sidebar) sidebar.classList.remove('-translate-x-full');
+        if(overlay) overlay.classList.remove('hidden');
+    };
+    window.closeMobileMenu = () => {
+        const sidebar = document.getElementById('appSidebar');
+        const overlay = document.getElementById('mobileNavOverlay');
+        if(sidebar) sidebar.classList.add('-translate-x-full');
+        if(overlay) overlay.classList.add('hidden');
+    };
+
     // Navigation
+    const adminOnlyPages = ['users_manage', 'settings'];
+    const fullOnlyPages = ['new_bill', 'expenses'];
     window.navigate = (page, params = {}) => {
+        if(adminOnlyPages.includes(page) && !isAdmin()) { showToast('এই পেইজে প্রবেশের অনুমতি নেই', true); page = 'dashboard'; }
+        if(fullOnlyPages.includes(page) && isViewOnly()) { showToast('এই পেইজে প্রবেশের অনুমতি নেই', true); page = 'dashboard'; }
+        closeMobileMenu();
         document.querySelectorAll('.app-page').forEach(el => el.classList.add('hidden-view'));
         document.querySelectorAll('.nav-link').forEach(el => { el.classList.remove('active-nav', 'text-[#FDE68A]'); });
         
@@ -730,13 +849,17 @@
         const rawUser = document.getElementById('staffUsername').value.trim();
         const pass = document.getElementById('staffPassword').value;
         const email = rawUser.includes('@') ? rawUser : `${rawUser}@jaeenstudio.com`;
+        const role = document.getElementById('staffRole').value;
+        const separate = document.getElementById('staffSeparate').checked;
 
         try {
-            await createUserWithEmailAndPassword(secondaryAuth, email, pass);
-            await signOut(secondaryAuth); 
-            
+            const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+            const newUid = cred.user.uid;
+            await signOut(secondaryAuth);
+
             await addDoc(collection(db, "staff"), {
-                username: rawUser, email: email, timestamp: serverTimestamp()
+                username: rawUser, email: email, role: role, separate: separate,
+                uid: newUid, parentOwnerId: window.currentOwnerId, timestamp: serverTimestamp()
             });
             showToast('নতুন স্টাফ একাউন্ট তৈরি হয়েছে!');
             document.getElementById('staffForm').reset();
@@ -752,8 +875,11 @@
         snap.forEach(doc => {
             const d = doc.data();
             const dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString('en-GB') : '-';
-            tbody.innerHTML += `<tr class="border-b"><td class="p-3 font-bold">${d.username}</td><td class="p-3">${dateStr}</td><td class="p-3 text-center"><button onclick="deleteStaff('${doc.id}')" class="text-red-500 font-bold hover:underline">ডিলিট রেকর্ড</button></td></tr>`;
+            const roleTxt = d.role === 'view' ? '<span class="text-orange-600 font-bold">শুধু ভিউ</span>' : '<span class="text-blue-600 font-bold">ফুল এক্সেস</span>';
+            const ledgerTxt = d.separate ? '<span class="text-purple-600 font-bold">আলাদা হিসাব</span>' : '<span class="text-gray-500">শেয়ার্ড (আমার হিসাব)</span>';
+            tbody.innerHTML += `<tr class="border-b"><td class="p-3 font-bold">${d.username}</td><td class="p-3">${roleTxt}</td><td class="p-3">${ledgerTxt}</td><td class="p-3">${dateStr}</td><td class="p-3 text-center"><button onclick="deleteStaff('${doc.id}')" class="text-red-500 font-bold hover:underline">ডিলিট রেকর্ড</button></td></tr>`;
         });
+        if(snap.empty) tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">কোনো স্টাফ নেই</td></tr>';
     }
     
     window.deleteStaff = async (id) => {
@@ -773,6 +899,7 @@
         
         txSnap.forEach(doc => {
             const d = doc.data(); d.id = doc.id;
+            if((d.ownerId || null) !== window.currentOwnerId) return;
             if(d.type === 'INCOME') totInAll += d.paid_amount;
             if(d.type === 'EXPENSE') totOutAll += d.total_amount;
             
@@ -876,6 +1003,7 @@
     });
 
     // --- CUSTOMERS ---
+    // --- CUSTOMERS ---
     window.loadCustomers = async () => {
         const q = (document.getElementById('searchCustomer').value || '').toLowerCase().trim();
         const snap = await getDocs(collection(db, "customers"));
@@ -883,30 +1011,57 @@
         tbody.innerHTML = '';
         snap.forEach(docSnap => {
             const d = docSnap.data();
+            if((d.ownerId || null) !== window.currentOwnerId) return;
             const nameL = (d.name || '').toLowerCase();
             const mobileL = (d.mobile || '');
             if(q && !nameL.includes(q) && !mobileL.includes(q)) return;
             const tr = document.createElement('tr');
             tr.className = 'border-b border-gray-200/70 hover:bg-white/40';
+            const delBtn = isViewOnly() ? '' : `<button type="button" class="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-bold del-customer-btn ml-1">ডিলিট</button>`;
             tr.innerHTML = `
                 <td class="p-3 font-bold">${d.name || ''}</td><td class="p-3">${d.mobile || ''}</td>
                 <td class="p-3 text-right">৳ ${d.total_billed || 0}</td>
                 <td class="p-3 text-right font-bold ${d.total_due > 0 ? 'text-red-500' : 'text-green-600'}">৳ ${d.total_due || 0}</td>
-                <td class="p-3 text-center"><button type="button" class="bg-[#047857] text-white px-4 py-1.5 rounded-lg font-bold view-profile-btn">প্রোফাইল</button></td>`;
+                <td class="p-3 text-center"><button type="button" class="bg-[#047857] text-white px-4 py-1.5 rounded-lg font-bold view-profile-btn">প্রোফাইল</button>${delBtn}</td>`;
             tr.querySelector('.view-profile-btn').addEventListener('click', () => navigate('profile', { id: docSnap.id }));
+            const dBtn = tr.querySelector('.del-customer-btn');
+            if(dBtn) dBtn.addEventListener('click', () => deleteCustomer(docSnap.id, d.name));
             tbody.appendChild(tr);
         });
-        if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">কোনো গ্রাহক পাওয়া যায়নি</td></tr>';
+        if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">কোনো গ্রাহক পাওয়া যায়নি</td></tr>';
     }
+
+    window.deleteCustomer = async (id, name) => {
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
+        if(!confirm(`আপনি কি নিশ্চিত? "${name}" এর সকল তথ্য, লেনদেন/রশিদ স্থায়ীভাবে মুছে যাবে!`)) return;
+        showLoader();
+        try {
+            const txSnap = await getDocs(query(collection(db, "transactions"), where("customerId", "==", id)));
+            const batch = writeBatch(db);
+            for(const txDoc of txSnap.docs) {
+                const itemsSnap = await getDocs(collection(db, `transactions/${txDoc.id}/items`));
+                itemsSnap.forEach(itDoc => batch.delete(itDoc.ref));
+                batch.delete(txDoc.ref);
+            }
+            batch.delete(doc(db, "customers", id));
+            await batch.commit();
+            showToast('গ্রাহক মুছে ফেলা হয়েছে');
+            loadCustomers();
+        } catch(err) {
+            console.error('গ্রাহক ডিলিট এরর:', err);
+            showToast('মুছতে সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
+        }
+        hideLoader();
+    };
 
     // --- PROFILE ---
     async function loadProfile(id) {
         showLoader();
         try {
-            if(!id) { showToast('গ্রাহক আইডি পাওয়া যায়নি', true); navigate('customers'); return; }
+            if(!id) { showToast('গ্রাহক আইডি পাওয়া যায়নি', true); navigate('customers'); return; }
 
             const cSnap = await getDoc(doc(db, "customers", id));
-            if(!cSnap.exists()) { showToast('এই গ্রাহকটি খুঁজে পাওয়া যায়নি', true); navigate('customers'); return; }
+            if(!cSnap.exists()) { showToast('এই গ্রাহকটি খুঁজে পাওয়া যায়নি', true); navigate('customers'); return; }
             const c = cSnap.data();
             document.getElementById('profName').innerText = c.name || '';
             document.getElementById('profMobile').innerText = c.mobile || '';
@@ -916,6 +1071,9 @@
 
             document.getElementById('payDueCustId').value = id;
             document.getElementById('payDueDate').value = getTodayStr();
+            document.getElementById('advCustId').value = id;
+            document.getElementById('advDate').value = getTodayStr();
+            document.getElementById('profAdvanceAmt').innerText = c.advance_balance || 0;
 
             const dueBox = document.getElementById('profDueBox');
             if(c.total_due > 0) {
@@ -928,9 +1086,9 @@
             tbody.innerHTML = '';
             try {
                 // customerId (equality) + timestamp (orderBy) হলো Firestore-এ কম্পোজিট ইনডেক্স
-                // লাগে এমন একটা কম্বিনেশন — সেই ইনডেক্স তৈরি না থাকলে এই কোয়েরি এতদিন
+                // লাগে এমন একটা কম্বিনেশন — সেই ইনডেক্স তৈরি না থাকলে এই কোয়েরি এতদিন
                 // এরর থ্রো করত এবং পুরো প্রোফাইল পেজ চিরকাল লোডিং-এ আটকে থাকত। orderBy বাদ
-                // দিয়ে ব্রাউজারেই সর্ট করাই এখন থেকে নির্ভরযোগ্য সমাধান।
+                // দিয়ে ব্রাউজারেই সর্ট করাই এখন থেকে নির্ভরযোগ্য সমাধান।
                 const txs = await getDocs(query(collection(db, "transactions"), where("customerId", "==", id)));
                 const rows = [];
                 txs.forEach(docSnap => rows.push({ id: docSnap.id, ...docSnap.data() }));
@@ -940,36 +1098,52 @@
                     const b = (h.total_amount || 0) - (h.discount || 0);
                     const tr = document.createElement('tr');
                     tr.className = 'border-b hover:bg-white/40';
+                    const isWork = h.category !== 'বকেয়া পরিশোধ' && h.category !== 'অগ্রিম জমা';
+                    let catLabel = 'সেবা/কাজ';
+                    if(h.category === 'বকেয়া পরিশোধ') catLabel = 'বকেয়া পরিশোধ';
+                    if(h.category === 'অগ্রিম জমা') catLabel = 'অগ্রিম জমা';
+                    const actionBtns = isWork ? `
+                        <button type="button" class="text-blue-600 font-bold hover:underline prof-inv-btn">রশিদ</button>
+                        <button type="button" class="full-only text-amber-600 font-bold hover:underline ml-2 prof-edit-btn">এডিট</button>
+                        <button type="button" class="full-only text-red-600 font-bold hover:underline ml-2 prof-del-btn">ডিলিট</button>
+                    ` : `<button type="button" class="text-blue-600 font-bold hover:underline prof-inv-btn">রশিদ</button>`;
                     tr.innerHTML = `
                         <td class="p-3 border">${formatBNDate(h.date)}</td>
-                        <td class="p-3 border font-bold ${h.category==='বকেয়া পরিশোধ'?'text-green-600':'text-gray-700'}">${h.category==='বকেয়া পরিশোধ' ? 'বকেয়া পরিশোধ' : 'সেবা/কাজ'}</td>
+                        <td class="p-3 border font-bold ${!isWork?'text-green-600':'text-gray-700'}">${catLabel}</td>
                         <td class="p-3 border text-right">৳ ${b}</td>
                         <td class="p-3 border text-right text-green-600 font-bold">৳ ${h.paid_amount || 0}</td>
                         <td class="p-3 border text-right text-red-500 font-bold">৳ ${h.due_amount > 0 ? h.due_amount : 0}</td>
-                        <td class="p-3 border text-center"><button type="button" class="text-blue-600 font-bold hover:underline prof-inv-btn">রশিদ</button></td>`;
+                        <td class="p-3 border text-center whitespace-nowrap">${actionBtns}</td>`;
                     tr.querySelector('.prof-inv-btn').addEventListener('click', () => navigate('invoice', { id: h.id }));
+                    const editBtn = tr.querySelector('.prof-edit-btn');
+                    if(editBtn) editBtn.addEventListener('click', () => editBill(h.id));
+                    const delBtn = tr.querySelector('.prof-del-btn');
+                    if(delBtn) delBtn.addEventListener('click', () => deleteBill(h.id, id));
                     tbody.appendChild(tr);
                 });
                 if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500 border">কোনো লেনদেন নেই</td></tr>';
             } catch(histErr) {
                 console.error('প্রোফাইল হিস্ট্রি লোড এরর:', histErr);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500 border">কাজের হিস্ট্রি লোড করা যায়নি</td></tr>';
-                showToast('কাজের হিস্ট্রি লোড করতে সমস্যা হয়েছে', true);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500 border">কাজের হিস্ট্রি লোড করা যায়নি</td></tr>';
+                showToast('কাজের হিস্ট্রি লোড করতে সমস্যা হয়েছে', true);
             }
+            if (window.lucide) window.lucide.createIcons();
         } catch(err) {
             console.error('প্রোফাইল লোড এরর:', err);
-            showToast('প্রোফাইল লোড করতে সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
+            showToast('প্রোফাইল লোড করতে সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
         } finally {
             hideLoader();
         }
     }
 
     window.navToNewBillFromProfile = () => {
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
         navigate('new_bill', {mobile: document.getElementById('profMobile').innerText, name: document.getElementById('profName').innerText});
     };
 
     window.payDue = async (e) => {
         e.preventDefault();
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
         showLoader();
         const cid = document.getElementById('payDueCustId').value;
         const paid = parseFloat(document.getElementById('payDueAmt').value);
@@ -979,9 +1153,9 @@
         const newTxRef = doc(collection(db, "transactions"));
         batch.set(newTxRef, {
             customerId: cid, customerName: cData.name, customerMobile: cData.mobile,
-            type: 'INCOME', category: 'বকেয়া পরিশোধ',
+            type: 'INCOME', category: 'বকেয়া পরিশোধ',
             total_amount: 0, discount: 0, paid_amount: paid, due_amount: -paid,
-            date: document.getElementById('payDueDate').value, timestamp: serverTimestamp()
+            date: document.getElementById('payDueDate').value, timestamp: serverTimestamp(), ownerId: window.currentOwnerId
         });
         
         batch.update(doc(db, "customers", cid), {
@@ -992,22 +1166,108 @@
         await batch.commit();
         
         const rDue = (cData.total_due || 0) - paid;
-        sendSMS(cData.mobile, `প্রিয় ${cData.name}, আপনার মোট বিল ৳${cData.total_billed}, জমা ৳${(cData.total_paid||0)+paid}, ` + (rDue > 0 ? `অবশিষ্ট বকেয়া ৳${rDue}।` : `সম্পূর্ণ হিসাব পরিশোধিত।`) + " মোবাইল: 01733-296262");
+        sendSMS(cData.mobile, `প্রিয় ${cData.name}, আপনার মোট বিল ৳${cData.total_billed}, জমা ৳${(cData.total_paid||0)+paid}, ` + (rDue > 0 ? `অবশিষ্ট বকেয়া ৳${rDue}।` : `সম্প৉42র্ণ হিসাব পরিশোধিত।`) + " মোবাইল: 01733-296262");
         
         navigate('invoice', {id: newTxRef.id});
         hideLoader();
     };
 
+    // --- অগ্রিম জমা ---
+    window.depositAdvance = async (e) => {
+        e.preventDefault();
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
+        showLoader();
+        try {
+            const cid = document.getElementById('advCustId').value;
+            const amt = parseFloat(document.getElementById('advAmt').value) || 0;
+            if(amt <= 0) { showToast('সঠিক পরিমাণ দিন', true); hideLoader(); return; }
+            const cData = (await getDoc(doc(db, "customers", cid))).data();
+            const batch = writeBatch(db);
+            const newTxRef = doc(collection(db, "transactions"));
+            batch.set(newTxRef, {
+                customerId: cid, customerName: cData.name, customerMobile: cData.mobile,
+                type: 'INCOME', category: 'অগ্রিম জমা',
+                total_amount: 0, discount: 0, paid_amount: 0, due_amount: 0,
+                date: document.getElementById('advDate').value, timestamp: serverTimestamp(), ownerId: window.currentOwnerId
+            });
+            batch.update(doc(db, "customers", cid), {
+                advance_balance: (cData.advance_balance || 0) + amt
+            });
+            await batch.commit();
+            showToast('অগ্রিম জমা সফলভাবে রাখা হয়েছে');
+            document.getElementById('advAmt').value = '';
+            loadProfile(cid);
+        } catch(err) {
+            console.error('অগ্রিম জমা এরর:', err);
+            showToast('সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
+        }
+        hideLoader();
+    };
+
     // --- NEW BILL ---
-    function initNewBill(params = {}) {
+    window.editBillTxData = null; // এডিট মোডে থাকা টা-এর পুরনো ডাটা (কাস্টমার টোটাল সমন্বয়ের জন্য)
+    async function initNewBill(params = {}) {
         document.getElementById('billForm').reset();
         document.getElementById('editCustomerId').value = '';
+        document.getElementById('editTxId').value = '';
+        window.editBillTxData = null;
         document.getElementById('billDate').value = getTodayStr();
         document.getElementById('servicesContainer').innerHTML = '';
         document.getElementById('billUserStatus').innerText = '';
+        document.getElementById('bill-page-title').innerText = 'নতুন কাজ / বিল এন্ট্রি';
+        const submitBtn = document.querySelector('#billForm button[type="submit"]');
+        if(submitBtn) submitBtn.innerText = 'বিল সেভ ও প্রিন্ট করুন';
+
+        if(params.editTxId) {
+            showLoader();
+            try {
+                const txSnap = await getDoc(doc(db, "transactions", params.editTxId));
+                if(txSnap.exists()) {
+                    const tx = txSnap.data();
+                    window.editBillTxData = { id: params.editTxId, ...tx };
+                    document.getElementById('editTxId').value = params.editTxId;
+                    document.getElementById('editCustomerId').value = tx.customerId || '';
+                    document.getElementById('billDate').value = tx.date || getTodayStr();
+                    document.getElementById('billMobile').value = tx.customerMobile || '';
+                    document.getElementById('billName').value = tx.customerName || '';
+                    document.getElementById('bill-page-title').innerText = 'বিল এডিট করুন';
+                    if(submitBtn) submitBtn.innerText = 'পরিবর্তন সেভ করুন';
+
+                    const itemsSnap = await getDocs(collection(db, `transactions/${params.editTxId}/items`));
+                    if(!itemsSnap.empty) {
+                        itemsSnap.forEach(itDoc => {
+                            const it = itDoc.data();
+                            addServiceRow();
+                            const row = document.getElementById('servicesContainer').lastElementChild;
+                            const sel = row.querySelector('.s-name');
+                            let matched = false;
+                            for(const opt of sel.options) { if(opt.value === it.service_name) { matched = true; break; } }
+                            if(matched) { sel.value = it.service_name; }
+                            else {
+                                sel.value = 'অন্যান্য';
+                                row.querySelector('.s-custom').value = it.service_name || '';
+                                row.querySelector('.s-custom').classList.remove('hidden');
+                            }
+                            row.querySelector('.s-worker').value = it.customer_worker_name || '';
+                            row.querySelector('.s-qty').value = it.qty || 1;
+                            row.querySelector('.s-rate').value = it.rate || 0;
+                        });
+                    } else { addServiceRow(); }
+                    document.getElementById('billDiscount').value = tx.discount || 0;
+                    document.getElementById('billPaid').value = tx.paid_amount || 0;
+                    calcBillFinal();
+                }
+            } catch(err) {
+                console.error('বিল এডিট লোড এরর:', err);
+                showToast('বিল এডিট মোডে লোড করতে সমস্যা হয়েছে', true);
+            }
+            hideLoader();
+            return;
+        }
+
         addServiceRow();
         calcBillFinal();
-        
+
         if(params.mobile) {
             document.getElementById('billMobile').value = params.mobile;
             document.getElementById('billName').value = params.name || '';
@@ -1017,12 +1277,14 @@
 
     window.checkCustomerExists = async () => {
         const mob = document.getElementById('billMobile').value;
+        if(document.getElementById('editTxId').value) return; // এডিট মোডে কাস্টমার পরিবর্তন হবে না
         if(mob.length >= 11) {
             const snap = await getDocs(query(collection(db, "customers"), where("mobile", "==", mob)));
             const status = document.getElementById('billUserStatus');
-            if(!snap.empty) {
-                document.getElementById('billName').value = snap.docs[0].data().name;
-                document.getElementById('editCustomerId').value = snap.docs[0].id;
+            const match = snap.docs.find(d => (d.data().ownerId || null) === window.currentOwnerId);
+            if(match) {
+                document.getElementById('billName').value = match.data().name;
+                document.getElementById('editCustomerId').value = match.id;
                 status.innerText = "বিদ্যমান গ্রাহক"; status.className = "text-green-600 font-bold mt-1 text-sm h-5";
             } else {
                 document.getElementById('editCustomerId').value = '';
@@ -1031,7 +1293,7 @@
         }
     };
 
-    const sList = {'নামজারি আবেদন':300, 'অনলাইন খতিয়ান':150, 'ওয়ারিশ নামা':50, 'অনলাইন আবেদন':100, 'জন্ম নিবন্ধন আবেদন':100, 'জন্ম নিবন্ধন সংশোধন':150, '০৪ কপি ছবি':50, 'ভোটার আবেদন':150, 'ফটোকপি':3};
+    const sList = {'নামজারি আবেদন':300, 'অনলাইন খতিয়ান':150, 'ওয়ারিশ নামা':50, 'অনলাইন আবেদন':100, 'জন্ম নিবন্ধন আবেদন':100, 'জন্ম নিবন্ধন সংশোধন':150, '০৪ কপি ছবি':50, 'ভোটার আবেদন':150, 'ফটোকপি':3};
     window.addServiceRow = () => {
         let opts = `<option value="" data-rate="0">নির্বাচন করুন</option>`;
         for(let k in sList) opts += `<option value="${k}" data-rate="${sList[k]}">${k} (${sList[k]} ৳)</option>`;
@@ -1069,12 +1331,13 @@
         document.getElementById('billFinalTxt').innerText = final;
         const paid = parseFloat(document.getElementById('billPaid').value) || 0;
         const due = final - paid;
-        document.getElementById('billDueLabel').innerText = due < 0 ? 'অ্যাডভান্স:' : 'বকেয়া:';
+        document.getElementById('billDueLabel').innerText = due < 0 ? 'অ্যাডভান্স:' : 'বকেয়া:';
         document.getElementById('billDueTxt').innerText = Math.abs(due);
     };
 
     window.saveBill = async (e) => {
         e.preventDefault();
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
         showLoader();
         const date = document.getElementById('billDate').value;
         const mob = document.getElementById('billMobile').value;
@@ -1082,9 +1345,12 @@
         
         const tot = parseFloat(document.getElementById('billTotalTxt').innerText);
         const disc = parseFloat(document.getElementById('billDiscount').value) || 0;
-        const paid = parseFloat(document.getElementById('billPaid').value) || 0;
-        const due = (tot - disc) - paid;
+        const paidInput = parseFloat(document.getElementById('billPaid').value) || 0;
+        let paid = paidInput;
+        let due = (tot - disc) - paid;
         let cid = document.getElementById('editCustomerId').value;
+        const editTxId = document.getElementById('editTxId').value;
+        let advanceUsed = 0;
         
         const items = [];
         document.querySelectorAll('.service-row').forEach(r => {
@@ -1101,39 +1367,125 @@
         const batch = writeBatch(db);
         let custTotalDue = due;
 
-        if(!cid) {
-            const newCustRef = doc(collection(db, "customers"));
-            cid = newCustRef.id;
-            batch.set(newCustRef, { name, mobile: mob, total_billed: tot-disc, total_paid: paid, total_due: due });
-        } else {
-            const cData = (await getDoc(doc(db, "customers", cid))).data();
-            custTotalDue = (cData.total_due || 0) + due;
-            batch.update(doc(db, "customers", cid), {
-                name, total_billed: (cData.total_billed || 0) + (tot-disc),
-                total_paid: (cData.total_paid || 0) + paid, total_due: custTotalDue
+        try {
+            if(editTxId) {
+                // --- এডিট মোড: পুরনো টা-এর প্রভাব বাতিল করে নতুন মান বসানো ---
+                const old = window.editBillTxData || {};
+                const oldBilled = (old.total_amount || 0) - (old.discount || 0);
+                const oldPaid = old.paid_amount || 0;
+                const oldDue = old.due_amount || 0;
+                const cData = (await getDoc(doc(db, "customers", cid))).data() || {};
+                const newBilled = tot - disc;
+                custTotalDue = (cData.total_due || 0) - oldDue + due;
+                batch.update(doc(db, "customers", cid), {
+                    name,
+                    total_billed: (cData.total_billed || 0) - oldBilled + newBilled,
+                    total_paid: (cData.total_paid || 0) - oldPaid + paid,
+                    total_due: custTotalDue
+                });
+
+                const oldItemsSnap = await getDocs(collection(db, `transactions/${editTxId}/items`));
+                oldItemsSnap.forEach(itDoc => batch.delete(itDoc.ref));
+
+                const txRef = doc(db, "transactions", editTxId);
+                batch.update(txRef, {
+                    customerName: name, customerMobile: mob,
+                    total_amount: tot, discount: disc, paid_amount: paid, due_amount: due,
+                    date: date
+                });
+                items.forEach(it => { batch.set(doc(collection(db, `transactions/${editTxId}/items`)), it); });
+                await batch.commit();
+
+                showToast('বিল সফলভাবে আপডেট হয়েছে');
+                navigate('invoice', {id: editTxId});
+                hideLoader();
+                return;
+            }
+
+            if(!cid) {
+                const newCustRef = doc(collection(db, "customers"));
+                cid = newCustRef.id;
+                batch.set(newCustRef, { name, mobile: mob, total_billed: tot-disc, total_paid: paid, total_due: due, advance_balance: 0, ownerId: window.currentOwnerId });
+            } else {
+                const cData = (await getDoc(doc(db, "customers", cid))).data() || {};
+                // --- অগ্রিম জমা থেকে স্বয়ংক্রিয় কর্তন ---
+                const advBal = cData.advance_balance || 0;
+                if(due > 0 && advBal > 0) {
+                    advanceUsed = Math.min(due, advBal);
+                    due -= advanceUsed;
+                    paid += advanceUsed;
+                }
+                custTotalDue = (cData.total_due || 0) + due;
+                batch.update(doc(db, "customers", cid), {
+                    name, total_billed: (cData.total_billed || 0) + (tot-disc),
+                    total_paid: (cData.total_paid || 0) + paid, total_due: custTotalDue,
+                    advance_balance: advBal - advanceUsed
+                });
+            }
+
+            const txRef = doc(collection(db, "transactions"));
+            batch.set(txRef, {
+                customerId: cid, customerName: name, customerMobile: mob,
+                type: 'INCOME', category: 'সেবা/কাজ',
+                total_amount: tot, discount: disc, paid_amount: paid, due_amount: due,
+                advance_used: advanceUsed,
+                date: date, timestamp: serverTimestamp(), ownerId: window.currentOwnerId
             });
+
+            items.forEach(it => { batch.set(doc(collection(db, `transactions/${txRef.id}/items`)), it); });
+            await batch.commit();
+
+            sendSMS(mob, `প্রিয় ${name}, আপনার মোট বিল ৳${tot-disc}, জমা ৳${paid}, ` + (custTotalDue > 0 ? `অবশিষ্ট বকেয়া ৳${custTotalDue}।` : `হিসাব পরিশোধিত।`) + " মোবাইল: 01733-296262");
+
+            navigate('invoice', {id: txRef.id});
+        } catch(err) {
+            console.error('বিল সেভ এরর:', err);
+            showToast('বিল সেভ করতে সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
         }
-
-        const txRef = doc(collection(db, "transactions"));
-        batch.set(txRef, {
-            customerId: cid, customerName: name, customerMobile: mob,
-            type: 'INCOME', category: 'সেবা/কাজ',
-            total_amount: tot, discount: disc, paid_amount: paid, due_amount: due,
-            date: date, timestamp: serverTimestamp()
-        });
-
-        items.forEach(it => { batch.set(doc(collection(db, `transactions/${txRef.id}/items`)), it); });
-        await batch.commit();
-
-        sendSMS(mob, `প্রিয় ${name}, আপনার মোট বিল ৳${tot-disc}, জমা ৳${paid}, ` + (custTotalDue > 0 ? `অবশিষ্ট বকেয়া ৳${custTotalDue}।` : `হিসাব পরিশোধিত।`) + " মোবাইল: 01733-296262");
-
-        navigate('invoice', {id: txRef.id});
         hideLoader();
     };
+
+    window.deleteBill = async (txId, custId) => {
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
+        if(!confirm('এই রশিদটি মুছে ফেলতে চান? গ্রাহকের হিসাব ও পুনঃগণনা হবে।')) return;
+        showLoader();
+        try {
+            const txSnap = await getDoc(doc(db, "transactions", txId));
+            if(!txSnap.exists()) { showToast('রশিদ পাওয়া যায়নি', true); hideLoader(); return; }
+            const tx = txSnap.data();
+            const batch = writeBatch(db);
+
+            if(custId) {
+                const cData = (await getDoc(doc(db, "customers", custId))).data();
+                if(cData) {
+                    const billed = (tx.total_amount || 0) - (tx.discount || 0);
+                    batch.update(doc(db, "customers", custId), {
+                        total_billed: (cData.total_billed || 0) - billed,
+                        total_paid: (cData.total_paid || 0) - (tx.paid_amount || 0),
+                        total_due: (cData.total_due || 0) - (tx.due_amount || 0)
+                    });
+                }
+            }
+            const itemsSnap = await getDocs(collection(db, `transactions/${txId}/items`));
+            itemsSnap.forEach(itDoc => batch.delete(itDoc.ref));
+            batch.delete(doc(db, "transactions", txId));
+            await batch.commit();
+            showToast('রশিদ মুছে ফেলা হয়েছে');
+            if(custId) loadProfile(custId); else navigate('customers');
+        } catch(err) {
+            console.error('বিল ডিলিট এরর:', err);
+            showToast('মুছতে সমস্যা হয়েছে: ' + (err.message || 'অজানা ত্রুটি'), true);
+        }
+        hideLoader();
+    };
+
+    window.editBill = (txId) => { navigate('new_bill', { editTxId: txId }); };
+
 
     // --- EXPENSES ---
     window.saveExpense = async (e) => {
         e.preventDefault();
+        if(isViewOnly()) { showToast('এই একশনে অনুমতি নেই', true); return; }
         showLoader();
         let cat = document.getElementById('expCategory').value;
         if(cat === 'অন্যান্য') cat = document.getElementById('expCustom').value;
@@ -1141,7 +1493,7 @@
         
         await addDoc(collection(db, "transactions"), {
             type: 'EXPENSE', category: cat, total_amount: amt, paid_amount: amt, due_amount: 0,
-            date: document.getElementById('expDate').value, timestamp: serverTimestamp()
+            date: document.getElementById('expDate').value, timestamp: serverTimestamp(), ownerId: window.currentOwnerId
         });
         showToast('খরচ সেভ হয়েছে!');
         document.getElementById('expAmount').value = '';
@@ -1156,6 +1508,7 @@
         tbody.innerHTML = '';
         snap.forEach(docSnap => {
             const d = docSnap.data();
+            if((d.ownerId || null) !== window.currentOwnerId) return;
             const tr = document.createElement('tr');
             tr.className = 'border-b border-gray-200/70 hover:bg-white/40';
             tr.innerHTML = `
@@ -1167,7 +1520,7 @@
             tr.querySelector('.due-sms-btn').addEventListener('click', () => sendDueSMS(d.mobile, d.name, d.total_billed || 0, d.total_paid || 0, d.total_due || 0));
             tbody.appendChild(tr);
         });
-        if(snap.empty) tbody.innerHTML = '<tr><td colspan="4" class="text-center p-6 text-green-600 font-bold">কোনো বকেয়া নেই।</td></tr>';
+        if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="4" class="text-center p-6 text-green-600 font-bold">কোনো বকেয়া নেই।</td></tr>';
         hideLoader();
     }
     window.sendDueSMS = (mob, name, b, p, d) => {
@@ -1189,6 +1542,7 @@
         
         snap.forEach(doc => {
             const t = doc.data();
+            if((t.ownerId || null) !== window.currentOwnerId) return;
             if(t.type === 'INCOME') { tin += t.paid_amount; if(t.due_amount>0) tdue += t.due_amount; }
             if(t.type === 'EXPENSE') tout += t.total_amount;
             
@@ -1317,7 +1671,8 @@
     // --- RESET DATA ---
     window.resetDatabase = async (e) => {
         e.preventDefault();
-        if(!confirm('আপনি কি নিশ্চিত? সব ডাটা মুছে যাবে!')) return;
+        if(!isAdmin()) { showToast('এই একশনে অনুমতি নেই', true); return; }
+        if(!confirm('আপনি কি নিশ্চিত? আপনার হিসাবের সব ডাটা মুছে যাবে! (অন্য কোনো সেপারেট হিসাবের স্টাফের ডাটা প্রভাবিত হবে না)')) return;
         
         showLoader();
         try {
@@ -1325,10 +1680,10 @@
             for(let c of cols) {
                 const snap = await getDocs(collection(db, c));
                 const batch = writeBatch(db);
-                snap.forEach(d => batch.delete(d.ref));
+                snap.forEach(d => { if((d.data().ownerId || null) === window.currentOwnerId) batch.delete(d.ref); });
                 await batch.commit();
             }
-            showToast("সম্পূর্ণ ডাটা মুছে ফেলা হয়েছে");
+            showToast("আপনার হিসাবের সব ডাটা মুছে ফেলা হয়েছে");
             document.getElementById('resetPass').value = '';
         } catch(e) { alert('ত্রুটি: ' + e.message); }
         hideLoader();
